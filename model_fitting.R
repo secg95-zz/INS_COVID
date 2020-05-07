@@ -29,31 +29,36 @@ get_expected_I = function(beta, N0, lambda) {
   return(expected_I)
 }
 
-bootstrap_sample = function(expected_I, number_samples, window_size=3){
+bootstrap_sample = function( expected_I, number_samples, window_size=3){
   "
   Once the expected_I vector is computed is posible to generate the bootsrapped
   samples for constructing a confidence interval.
   
   Parameters
   ----------
-  expected_I : numeric vector
-    Sintomatic people on a single day.
-  number samples : numeric
-    number of re-sampling.
-  window_size : numeric
-    smoothing factor.
+  beta : numeric vector
+    Expected number of cases stemming from a single person in a single day.
+    Lagged one step (beta[1] = beta(0) in our notation).
+  N0 : numeric
+    Initial number of cases.
+  lambda : numeric
+    (1 / mean) number of days an individual will continue to be infectious.
   
   Returns
   -------
-  standarized_residual : bootsrapped samples
+  expected_I : numeric vector
+    Daily expected number of new cases.
   "
   standarized_residual <- expected_I/sd(expected_I)
   sample <- sample(standarized_residual, number_samples, replace = TRUE) 
-  
   for( i in seq(1, length(expected_I),3)){
     DE = sd(expected_I[i:i + 2])
+    print(standarized_residual[i:i + 2])
     standarized_residual[i:i + 2] = standarized_residual[i:i + 2]*DE  
   }
+  
+  
+  
   
   return(standarized_residual)
 }
