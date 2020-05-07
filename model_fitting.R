@@ -36,25 +36,24 @@ bootstrap_sample = function( expected_I, number_samples, window_size=3){
   
   Parameters
   ----------
-  beta : numeric vector
-    Expected number of cases stemming from a single person in a single day.
-    Lagged one step (beta[1] = beta(0) in our notation).
-  N0 : numeric
-    Initial number of cases.
-  lambda : numeric
-    (1 / mean) number of days an individual will continue to be infectious.
+  expected_I : numeric vector
+    Number of sintomatic people on a given day.
+  number_samples : numeric
+    number of samples.
+  window_size : numeric
+    smoothing factor.
   
   Returns
   -------
-  expected_I : numeric vector
-    Daily expected number of new cases.
+  standarized_residual : numeric vector
+    bootstrapped sample
   "
   standarized_residual <- expected_I/sd(expected_I)
   sample <- sample(standarized_residual, number_samples, replace = TRUE) 
-  for( i in seq(1, length(expected_I),3)){
-    DE = sd(expected_I[i:i + 2])
-    print(standarized_residual[i:i + 2])
-    standarized_residual[i:i + 2] = standarized_residual[i:i + 2]*DE  
+  for( i in seq(1, length(expected_I),window_size)){
+    DE = sd(expected_I[i:(i + window_size-1)])
+    print(standarized_residual[i:(i + window_size-1)])
+    standarized_residual[i:(i + window_size-1)] = standarized_residual[i:(i + window_size-1)]*DE  
   }
   
   
@@ -62,6 +61,7 @@ bootstrap_sample = function( expected_I, number_samples, window_size=3){
   
   return(standarized_residual)
 }
+
 
 optimize_lambda = function(observed_I, beta, N0, lambda0, lambda_min, lambda_max) {
   "
