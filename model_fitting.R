@@ -48,7 +48,7 @@ bootstrap_sample = function(expected_I, number_samples, window_size=3){
   standarized_residual : bootsrapped samples
   "
   standarized_residual <- expected_I/sd(expected_I)
-  sample <- sample(standarized_residual, number_samples, replace = True) 
+  sample <- sample(standarized_residual, number_samples, replace = TRUE) 
   
   for( i in seq(1, length(expected_I),3)){
     DE = sd(expected_I[i:i + 2])
