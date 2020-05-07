@@ -29,6 +29,35 @@ get_expected_I = function(beta, N0, lambda) {
   return(expected_I)
 }
 
+bootstrap_sample = function(expected_I, number_samples, window_size=3){
+  "
+  Once the expected_I vector is computed is posible to generate the bootsrapped
+  samples for constructing a confidence interval.
+  
+  Parameters
+  ----------
+  expected_I : numeric vector
+    Sintomatic people on a single day.
+  number samples : numeric
+    number of re-sampling.
+  window_size : numeric
+    smoothing factor.
+  
+  Returns
+  -------
+  standarized_residual : bootsrapped samples
+  "
+  standarized_residual <- expected_I/sd(expected_I)
+  sample <- sample(standarized_residual, number_samples, replace = True) 
+  
+  for( i in seq(1, length(expected_I),3)){
+    DE = sd(expected_I[i:i + 2])
+    standarized_residual[i:i + 2] = standarized_residual[i:i + 2]*DE  
+  }
+  
+  return(standarized_residual)
+}
+
 optimize_lambda = function(observed_I, beta, N0, lambda0, lambda_min, lambda_max) {
   "
   Find lambda that optimizes the quartic error of estimation of E[I(t)].
