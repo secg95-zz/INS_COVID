@@ -50,10 +50,17 @@ bootstrap_sample = function( expected_I, number_samples, window_size=3){
   "
   standarized_residual <- expected_I/sd(expected_I)
   sample <- sample(standarized_residual, number_samples, replace = TRUE) 
-  for( i in seq(1, length(expected_I),window_size)){
+
+  for( i in seq(1, length(expected_I) - (length(expected_I) %% window_size), window_size)){
     DE = sd(expected_I[i:(i + window_size-1)])
-    print(standarized_residual[i:(i + window_size-1)])
     standarized_residual[i:(i + window_size-1)] = standarized_residual[i:(i + window_size-1)]*DE  
+  }
+
+  if (length(expected_I) %% window_size != 0)
+  {
+    aux = length(expected_I) %% window_size
+    DE = sd (expected_I[length(expected_I) - aux:length(expected_I)])
+    expected_I[length(expected_I) - aux:length(expected_I)] = standarized_residual[(length(expected_I) - aux):length(expected_I)]*DE
   }
   
   
