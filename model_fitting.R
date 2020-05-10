@@ -1,3 +1,5 @@
+library(nloptr)
+
 get_expected_I = function(beta, N0, lambda) {
   "
   Calculates expected new case counts for each step in the time series.
