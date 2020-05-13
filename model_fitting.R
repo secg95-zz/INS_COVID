@@ -1,4 +1,5 @@
 library(nloptr)
+library(rlist)
 
 get_expected_I = function(beta, N0, lambda) {
   "
@@ -58,7 +59,7 @@ bootstrap_samples = function( expected_I, observed_I, number_samples, window_siz
   {
       sample <- sample(standarized_residual$SR, length(expected_I), replace = TRUE)
       sample = sample*standarized_residual$DE
-      sample_I = observed_I - sample
+      sample_I = expected_I + sample
       samples <- list.append(samples, i=sample_I)
   }
 
@@ -92,20 +93,18 @@ standarized_residuals = function(expected_I, observed_I, window_size=3){
   {
     DE = sd(observed_I[i:(i + window_size-1)] - expected_I[i:(i + window_size-1)])
     standarized_residual[i:(i + window_size-1)] = standarized_residual[i:(i + window_size-1)]/DE 
-    DES[i:(i + window_size-1)] = DE 
+    DES[i:(i + window_size-1)] = DE
   }
 
   if (length(expected_I) %% window_size != 0)
   {
     aux = length(expected_I) %% window_size
-    DE = sd (observed_I[length(expected_I) - aux:length(expected_I)] - expected_I[length(expected_I) - aux:length(expected_I)])
-    DES[length(expected_I) - aux:length(expected_I)] = DE 
-    standarized_residual[length(expected_I) - aux:length(expected_I)] = standarized_residual[(length(expected_I) - aux):length(expected_I)]/DE
+    DE = sd(observed_I[(length(expected_I) - aux):length(expected_I)] - expected_I[(length(expected_I) - aux):length(expected_I)])
+    DES[(length(expected_I) - aux):length(expected_I)] = DE
+    standarized_residual[(length(expected_I) - aux):length(expected_I)] = standarized_residual[(length(expected_I) - aux):length(expected_I)]/DE
   }
   return(list("SR"=standarized_residual, "DE"=DES))
 }
-
-
 
 optimize_lambda = function(observed_I, beta, N0, lambda0, lambda_min, lambda_max) {
   "
