@@ -32,7 +32,7 @@ get_expected_I = function(beta, N0, lambda) {
   return(expected_I)
 }
 
-bootstrap_samples = function( expected_I, observed_I, number_samples, window_size=3){
+bootstrap_samples = function( expected_I, observed_I, number_samples, window_size=3 , use_wa = FALSE, beta = 0.9){
   "
   Once the expected_I vector is computed is posible to generate the bootsrapped
   samples for  a confidence interval cosntruction.
@@ -58,11 +58,21 @@ bootstrap_samples = function( expected_I, observed_I, number_samples, window_siz
   for( i in 1:number_samples)
   {
       sample <- sample(standarized_residual$SR, length(expected_I), replace = TRUE)
-      sample = sample*standarized_residual$DE
+
+      if(use_wa){
+        DES = 1:length(expected_I)
+        temp_de = standarized_residual$DE
+        for(j in 2:length(observed_I))
+        { 
+          temp_de[j] = beta*temp_de[j - 1] + (1-beta)*temp_de[j]
+        }
+        sample = sample*temp_de
+      }else{
+        sample = sample*standarized_residual$DE
+      }
       sample_I = expected_I + sample
       samples <- list.append(samples, i=sample_I)
   }
-
   df <- data.frame(matrix(unlist(samples), nrow=length(samples), byrow=T))
   print(df)
   return(df)
