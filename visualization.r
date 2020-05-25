@@ -24,7 +24,7 @@ plot_I_intervals = function(expected_I, observed_I, bootstrap_samples, confidenc
   lower_bound = apply(bootstrap_samples, MARGIN=2, FUN=lower)
   upper_bound = apply(bootstrap_samples, MARGIN=2, FUN=upper)
   # plot
-  df = data.frame(t(expected_I))
+  df = data.frame(expected_I)
   colnames(df) = "I(t)"
   df["t"] = 1:nrow(df)
   df["observed_I"] = observed_I
