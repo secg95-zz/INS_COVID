@@ -1,5 +1,6 @@
 library(nloptr)
 library(rlist)
+source("bootstrapping.r")
 
 get_expected_I = function(beta, N0, lambda) {
   "
@@ -133,7 +134,7 @@ fit = function(observed_I, beta0, beta_min, beta_max, lambda0, lambda_min,
 }
 
 fit2 = function(observed_I, beta0, beta_min, beta_max, lambda0, lambda_min,
-               lambda_max, N00, N0_min, N0_max, alpha, ignore_beta_diff) {
+               lambda_max, N00, N0_min, N0_max, regularization_weights, ignore_beta_diff, window_size=10) {
   "
   Fits the model to observed daily new case counts.
   
@@ -165,7 +166,9 @@ fit2 = function(observed_I, beta0, beta_min, beta_max, lambda0, lambda_min,
   ub = c(rep(beta_max, steps), lambda_max, N0_max)
   # set optimization parameters
   opts = list("algorithm" = "NLOPT_LN_BOBYQA", "xtol_rel" = 1.0e-7,
-              "maxeval" = 10000000)
+              "maxeval" = 100000)
+  observed_variances = compute_variances(observed_I, window_size)
+  print(observed_variances)
   # define loss function
   loss = function(x) {
     # unpack values
@@ -175,8 +178,9 @@ fit2 = function(observed_I, beta0, beta_min, beta_max, lambda0, lambda_min,
     # calculate loss
     expected_I = get_expected_I(beta, N0, lambda)
     beta_diff = diff(beta)
-    beta_diff = beta_diff[!1:length(beta_diff) %in% ignore_beta_diff]
-    loss = mean((expected_I - observed_I) ^ 4) + alpha * mean(beta_diff ^ 2)
+    alpha = regularization_weights*(observed_variances)
+    #6.4e9
+    loss = mean((expected_I - observed_I) ^ 4) +(6.4e8)* mean(alpha[1:(length(alpha) - 1)] * (beta_diff ^ 2))
   }
   result = nloptr(x0=x0, eval_f=loss, eval_grad_f=NULL, lb=lb, ub=ub, opts=opts)
   model = list()
