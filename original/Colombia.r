@@ -5,8 +5,12 @@ library(RJSONIO)
 source("original/model_fitting.r")
 source("visualization.r")
 
+# load data and initialize parameters
+load("CasosAjustados_Diagnostico.Rda")
+aux = rep(1,length(data$`Estimados Totales`))
+aux[c(15,27)] = 0
 params = list(
-  "alpha" = 2 ^ 40,
+  "regularization_weights" = aux,
   "lambda_min" = 1/40,
   "lambda_max" = 1/4,
   "beta_min" = 0.1,
@@ -20,8 +24,7 @@ bootstrap_params = list(
   "window_size" = 10,
   "confidence" = 0.95
 )
-# load data and initialize parameters
-load("CasosAjustados_Diagnostico.Rda")
+
 observed_I = data$`Estimados Totales`
 observed_I = c(observed_I[1], 0, tail(observed_I, -1))
 observed_I = observed_I[params$t0:length(observed_I)]
@@ -34,7 +37,7 @@ params$observed_I = observed_I
 model = fit2(observed_I, beta0=params$beta0, beta_min=params$beta_min,
              beta_max=params$beta_max, lambda0=params$lambda0, N00=params$N00,
              lambda_min=params$lambda_min, lambda_max=params$lambda_max,
-             N0_min=params$N0_min, N0_max=params$N0_max, alpha=params$alpha,
+             N0_min=params$N0_min, N0_max=params$N0_max, regularization_weights=params$regularization_weights,
              ignore_beta_diff=NULL)
 # save fitted model and parameters
 timestamp = format(Sys.time(), "%Y%m%d%H%M")
@@ -53,3 +56,8 @@ png(paste(out_dir, "I(t).png", sep="/"))
 plot(1:length(expected_I), expected_I, type="l")
 lines(1:length(observed_I), observed_I, col="red")
 dev.off()
+
+b_samples = bootstrap_samples(expected_I, observed_I,
+                              bootstrap_params$number_samples,
+                              bootstrap_params$window_size)
+plot_I_intervals(expected_I, observed_I, b_samples, confidence=bootstrap_params$confidence)
