@@ -5,8 +5,12 @@ library(RJSONIO)
 source("original/model_fitting.r")
 source("visualization.r")
 
+# load data and initialize parameters
+load("CasosAjustados_Diagnostico.Rda")
+aux = rep(1,length(data$`Estimados Totales`))
+aux[c(15,27)] = 0
 params = list(
-  "alpha" = 2 ^ 40,
+  "regularization_weights" = aux,
   "lambda_min" = 1/40,
   "lambda_max" = 1/4,
   "beta_min" = 0.1,
@@ -20,8 +24,7 @@ bootstrap_params = list(
   "window_size" = 10,
   "confidence" = 0.95
 )
-# load data and initialize parameters
-load("CasosAjustados_Diagnostico.Rda")
+
 observed_I = data$`Estimados Totales`
 observed_I = c(observed_I[1], 0, tail(observed_I, -1))
 observed_I = observed_I[params$t0:length(observed_I)]
