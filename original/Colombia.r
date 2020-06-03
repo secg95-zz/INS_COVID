@@ -7,10 +7,7 @@ source("visualization.r")
 
 # load data and initialize parameters
 load("CasosAjustados_Diagnostico.Rda")
-aux = rep(1,length(data$`Estimados Totales`))
-aux[c(15,27)] = 0
 params = list(
-  "regularization_weights" = aux,
   "lambda_min" = 1/40,
   "lambda_max" = 1/4,
   "beta_min" = 0.1,
