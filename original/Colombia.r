@@ -8,7 +8,7 @@ source("visualization.r")
 # load data and initialize parameters
 load("CasosAjustados_Diagnostico.Rda")
 aux = rep(1,length(data$`Estimados Totales`))
-aux[c(15,27)] = 0
+aux[c(27)] = 0
 params = list(
   "regularization_weights" = aux,
   "lambda_min" = 1/40,
@@ -37,7 +37,7 @@ params$observed_I = observed_I
 model = fit2(observed_I, beta0=params$beta0, beta_min=params$beta_min,
              beta_max=params$beta_max, lambda0=params$lambda0, N00=params$N00,
              lambda_min=params$lambda_min, lambda_max=params$lambda_max,
-             N0_min=params$N0_min, N0_max=params$N0_max, regularization_weights=params$regularization_weights,
+             N0_min=params$N0_min, N0_max=params$N0_max,regularization=6.4e7 , regularization_weights=params$regularization_weights,
              ignore_beta_diff=NULL)
 # save fitted model and parameters
 timestamp = format(Sys.time(), "%Y%m%d%H%M")
@@ -52,12 +52,10 @@ plot(R, xlab="t", ylab="R(t)", type="l")
 dev.off()
 # plot expected new cases with confidence intervals
 expected_I = get_expected_I(model$beta, model$N0, model$lambda)
-png(paste(out_dir, "I(t).png", sep="/"))
-plot(1:length(expected_I), expected_I, type="l")
-lines(1:length(observed_I), observed_I, col="red")
-dev.off()
 
 b_samples = bootstrap_samples(expected_I, observed_I,
                               bootstrap_params$number_samples,
                               bootstrap_params$window_size)
-plot_I_intervals(expected_I, observed_I, b_samples, confidence=bootstrap_params$confidence)
+
+plot_I_intervals(expected_I, observed_I, b_samples, confidence=bootstrap_params$confidence, out_dir)
+
