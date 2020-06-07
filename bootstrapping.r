@@ -40,7 +40,6 @@ bootstrap_samples = function( expected_I, observed_I, number_samples, window_siz
       samples <- list.append(samples, i=sample_I)
   }
   df <- data.frame(matrix(unlist(samples), nrow=length(samples), byrow=T))
-  print(df)
   return(df)
 }
 

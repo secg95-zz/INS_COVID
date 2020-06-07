@@ -2,7 +2,7 @@ library(ggplot2)
 
 # fake data
 
-plot_I_intervals = function(expected_I, observed_I, bootstrap_samples, confidence) {
+plot_I_intervals = function(expected_I, observed_I, bootstrap_samples, confidence, out_dir) {
   "
   Plots the daily expected number of new cases with confidence intervals.
   
@@ -28,8 +28,9 @@ plot_I_intervals = function(expected_I, observed_I, bootstrap_samples, confidenc
   colnames(df) = "I(t)"
   df["t"] = 1:nrow(df)
   df["observed_I"] = observed_I
-  ggplot(df, aes(x=t, y=`I(t)`)) +
+  plot <- ggplot(df, aes(x=t, y=`I(t)`)) +
     geom_line() +
     geom_line(data=df, aes(x=t, y=observed_I), col="red") +
     geom_ribbon(aes(ymin=lower_bound, ymax=upper_bound), alpha=0.2, fill="blue")
+    ggsave(filename = paste(out_dir, "I(t).png", sep="/"), plot = plot)
 }
