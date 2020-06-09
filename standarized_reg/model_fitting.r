@@ -1,14 +1,25 @@
 library(nloptr)
 library(rlist)
+source("bootstrapping.r")
 
-get_expected = function(beta, N0, lambda) {
+get_expected_I = function(beta, N0, lambda) {
   "
+  Calculates expected new case counts for each step in the time series.
+  
+  Parameters
+  ----------
+  beta : numeric vector
+    Expected number of cases stemming from a single person in a single day.
+    Lagged one step (beta[1] = beta(0) in our notation).
+  N0 : numeric
+    Initial number of cases.
+  lambda : numeric
+    (1 / mean) number of days an individual will continue to be infectious.
+  
   Returns
   -------
   expected_I : numeric vector
     Daily expected number of new cases.
-  expected_N : numeric vector
-    Daily expected number of infectious cases.
   "
   moments = length(beta)
   expected_I = rep(0, moments)
@@ -19,9 +30,7 @@ get_expected = function(beta, N0, lambda) {
     expected_I[t] = N_previous * beta[t]
     N_previous = expected_N[t]
   }
-  expected_N = c(N0, expected_N)
-  expected = list("I"=expected_I, "N"=expected_N)
-  return(expected)
+  return(expected_I)
 }
 
 fit = function(observed_I, beta0, beta_min, beta_max, lambda0, lambda_min,
@@ -65,12 +74,11 @@ fit = function(observed_I, beta0, beta_min, beta_max, lambda0, lambda_min,
     lambda = x[steps + 1]
     N0 = x[steps + 2]
     # calculate loss
-    expected = get_expected(beta, N0, lambda)
+    expected_I = get_expected_I(beta, N0, lambda)
     beta_diff = diff(beta)
-    regularization = (expected$N[1:length(beta_diff)] * beta_diff) ^ 2
-    regularization = regularization[!1:length(regularization) %in% ignore_beta_diff]
-    loss = sum((expected$I - observed_I) ^ 2) + sum(regularization)
-    return(loss)
+    beta_diff = beta_diff[!1:length(beta_diff) %in% ignore_beta_diff]
+    beta_diff = beta_diff / beta[!1:length(beta) %in% ignore_beta_diff]
+    loss = mean((expected_I - observed_I) ^ 4) + alpha * mean(beta_diff ^ 2)
   }
   result = nloptr(x0=x0, eval_f=loss, eval_grad_f=NULL, lb=lb, ub=ub, opts=opts)
   model = list()

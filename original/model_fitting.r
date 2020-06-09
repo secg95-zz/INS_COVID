@@ -236,6 +236,7 @@ fit3 = function(observed_I, beta0, beta_min, beta_max, lambda0, lambda_min,
     alpha = regularization_weights*(observed_variances)
     #6.4e8
     loss = mean((expected_I - observed_I) ^ 4) +(regularization)* mean(alpha[1:(length(alpha) - 1)] * (beta_diff ^ 2))
+    return(loss)
   }
   result = nloptr(x0=x0, eval_f=loss, eval_grad_f=NULL, lb=lb, ub=ub, opts=opts)
   model = list()

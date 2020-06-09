@@ -2,7 +2,7 @@
 Fit Nicolas's model to the Colombia data.
 "
 library(RJSONIO)
-source("original/model_fitting.r")
+source("standarized_reg/model_fitting.r")
 source("visualization.r")
 
 # load data and initialize parameters
@@ -14,7 +14,7 @@ params = list(
   "beta_min" = 0.1,
   "beta_max" = 0.7,
   "N0_min" = 0,
-  "N0_max" = 5,
+  "N0_max" = 20,
   "t0" = 1
 )
 bootstrap_params = list(
@@ -41,7 +41,7 @@ for (i in 1:1000) {
                ignore_beta_diff=26)
   # save fitted model and parameters
   timestamp = format(Sys.time(), "%Y%m%d%H%M")
-  out_dir = paste("original", "tuned", timestamp, sep="/")
+  out_dir = paste("standarized_reg", "tuned", timestamp, sep="/")
   dir.create(out_dir, recursive=TRUE)
   write(toJSON(params), paste(out_dir, "params.json", sep="/"))
   write(toJSON(model), paste(out_dir, "model.json", sep="/"))

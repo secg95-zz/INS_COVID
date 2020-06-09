@@ -67,10 +67,15 @@ fit = function(observed_I, beta0, beta_min, beta_max, lambda0, lambda_min,
     # calculate loss
     expected = get_expected(beta, N0, lambda)
     beta_diff = diff(beta)
-    regularization = (expected$N[1:length(beta_diff)] * beta_diff) ^ 2
+    regularization =  (beta_diff/beta[1:length(beta_diff)]) ^ 2
     regularization = regularization[!1:length(regularization) %in% ignore_beta_diff]
-    loss = sum((expected$I - observed_I) ^ 2) + sum(regularization)
-    return(loss)
+    observed_I=round(observed_I,0)
+    factSum=function(x){
+      return(sum(log(1:round(x,0))))
+    }
+    loglikelihood=observed_I*log(expected$I)-expected$I-sapply(as.matrix(observed_I), FUN=factSum)
+    loglikelihood[observed_I==0]=-expected$I[observed_I==0]
+    return(-mean(loglikelihood)+ alpha*mean(regularization))
   }
   result = nloptr(x0=x0, eval_f=loss, eval_grad_f=NULL, lb=lb, ub=ub, opts=opts)
   model = list()
