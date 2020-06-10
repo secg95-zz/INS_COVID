@@ -7,17 +7,17 @@ source("likelihood_incubation/model_fitting.r")
 # load data and initialize parameters
 load("CasosAjustados_Diagnostico.Rda")
 params = list(
-  "lambda" = 0,
+  "lambda" = 2 ^ 20,
   "beta_min" = 0.1,
   "beta_max" = 0.7,
-  "gamma_min" = 1,
+  "gamma_min" = 1 / 3,
   "gamma_max" = 1,
   "tau_min" = 1 / 40,
   "tau_max" = 1 / 4,
   "N0_min" = 0,
   "N0_max" = 5,
   "A0_min" = 0,
-  "A0_max" = 0,
+  "A0_max" = 5,
   "t0" = 1
 )
 

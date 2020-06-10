@@ -33,13 +33,12 @@ get_expected = function(beta, gamma, tau, N0, A0) {
   A_previous = A0
   for(t in 1:steps) {
     expected_I[t] = gamma * (A_previous + (beta[t] * N_previous))
-    expected_N[t] = N_previous * pexp(1, rate=tau, lower.tail=FALSE)
-                    + expected_I[t]
+    expected_N[t] = N_previous * pexp(1, rate=tau, lower.tail=FALSE) + expected_I[t]
     expected_A[t] = (1 - gamma) * (A_previous + (beta[t] * N_previous))
     N_previous = expected_N[t]
     A_previous = expected_A[t]
   }
-  return(list("N"=expected_N, "A"=expected_A, "I"=expected_I))
+  return(list("N"=c(N0, expected_N), "A"=c(A0, expected_A), "I"=expected_I))
 }
 
 fit = function(observed_I, beta0, beta_min, beta_max, gamma0, gamma_min,
@@ -86,8 +85,7 @@ fit = function(observed_I, beta0, beta_min, beta_max, gamma0, gamma_min,
     A0 = x[steps + 4]
     # calculate loss
     expected = get_expected(beta, gamma, tau, N0, A0)
-    beta_diff = diff(beta)
-    regularization =  (beta_diff / beta[1:(steps - 1)]) ^ 2
+    regularization =  (diff(beta) / beta[1:(steps - 1)]) ^ 2
     regularization = regularization[!1:length(regularization) %in% ignore_beta_diff]
     observed_I = round(observed_I, 0)
     factSum = function(x) {
@@ -95,7 +93,7 @@ fit = function(observed_I, beta0, beta_min, beta_max, gamma0, gamma_min,
     }
     loglikelihood = observed_I*log(expected$I)-expected$I-sapply(as.matrix(observed_I), FUN=factSum)
     loglikelihood[observed_I==0] = -expected$I[observed_I==0]
-    loss = -mean(loglikelihood) + lambda*mean(regularization)
+    return(-mean(loglikelihood) + lambda*mean(regularization))
   }
   result = nloptr(x0=x0, eval_f=loss, lb=lb, ub=ub, opts=opts)
   model = list(
@@ -106,8 +104,7 @@ fit = function(observed_I, beta0, beta_min, beta_max, gamma0, gamma_min,
     "A0" = result$solution[steps + 4],
     "loss" = result$objective
   )
-  beta_diff = diff(model$beta)
-  regularization =  (beta_diff / model$beta[1:(steps - 1)]) ^ 2
+  regularization =  (diff(model$beta) / model$beta[1:(steps - 1)]) ^ 2
   regularization = regularization[!1:(steps - 1) %in% ignore_beta_diff]
   model$likelihood = (model$loss - lambda * mean(regularization)) * steps
   return(model)
