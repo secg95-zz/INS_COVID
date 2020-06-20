@@ -15,9 +15,9 @@ params = list(
   "tau2_min" = 1 / 40,
   "tau2_max" = 1 / 4,
   "N0_min" = 0,
-  "N0_max" = 5,
+  "N0_max" = 0,
   "A0_min" = 0,
-  "A0_max" = 5,
+  "A0_max" = 10,
   "t0" = 1
 )
 
