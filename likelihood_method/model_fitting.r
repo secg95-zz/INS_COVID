@@ -164,5 +164,3 @@ fit_log_likelihood = function(observed_I, beta0, beta_min, beta_max, lambda0, la
   model$likelihood=(model$loss-Castigo*mean(regularization))*length(beta)
   return(model)
 }
-
-
