@@ -1,22 +1,29 @@
 source("simulations/generators.r")
-source("betaStateSpace/serial_interval_construction.R")
 
-nicolas = source("likelihood_incubation_exp/model_fitting.r")
+# import each model
+bayesian = new.env(); source("bayesian/model_fitting.r", local=bayesian)
+nicolas = new.env(); source("likelihood_incubation_exp/model_fitting.r", local=nicolas)
 
 # Bayesian model
-sim = simulate_bayesian(50, 2, 1)
-plot(sim$I, type="l", col="red", ylab="Count")
-lines(sim$expected, col="blue")
-lines(sim$expected_conditional)
+sim1 = simulate_bayesian(steps=50, phi=2, I0=1)
+par(mfrow=c(1, 2))
+plot(sim1$I, type="l", col="red", ylab="Count")
+lines(sim1$expected, col="blue")
+lines(sim1$expected_conditional)
 legend("topleft", legend=c("I", "E[I]", "E[I | previous]"), col=c("red", "blue", "black"), pch=20)
+R = bayesian$fit2(I=sim1$I, window=7, prior_shape=1, prior_rate=2, omega=sim1$omega)
+plot(R$mode, type="l", ylab="Posterior R Mode")
 
 # Almost Bayesian model with time-dependent serial interval
-sim = simulate_inseparable_beta(50, 2, 10, 1)
-lags = 21
-initialCases = sim$I[1:lags]
-base = sim$I[(lags + 1): length(sim$I)]
-result = betaThompson_non_constant_SI(base=base, window=7, initialCases=initialCases, lags=lags,  update=1, parameter1=2.235567, parameter2=5.419495, omega=sim$omega)
-plot(sim$I, type="l", col="red", ylab="Count")
-lines(sim$expected, col="blue")
-lines(sim$expected_conditional)
+sim2 = simulate_inseparable_beta(steps=50, phi=2, tau0=5, I0=1)
+par(mfrow=c(1, 2))
+plot(sim2$I, type="l", col="red", ylab="Count")
+lines(sim2$expected, col="blue")
+lines(sim2$expected_conditional)
 legend("topleft", legend=c("I", "E[I]", "E[I | previous]"), col=c("red", "blue", "black"), pch=20)
+R = bayesian$fit3(I=sim2$I, window=7, prior_shape=1, prior_rate=2, omega=sim2$omega)
+plot(R$mode, type="l", ylab="Posterior R Mode")
+# fit without knowledge of the change in omega
+R = bayesian$fit2(I=sim2$I, window=7, prior_shape=1, prior_rate=2, omega=sim1$omega)
+lines(R$mode, type="l", ylab="Posterior R Mode", col="blue")
+legend("topleft", legend=c("Timedep omega", "Independent"), col=c("black", "blue"), pch=20)

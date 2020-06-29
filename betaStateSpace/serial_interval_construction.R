@@ -7,7 +7,7 @@ weightConstructionSerialInterval=function(lags=7, parameter1=2.235567, parameter
   omegaLag=diff(pweibull(1:(lags+1),parameter1, parameter2 ))
   #ni idea que es esto?
   omegaLag=omegaLag/sum(omegaLag)
-  omegaLag=rev(omegaLag)
+  # omegaLag=rev(omegaLag)
   return(omegaLag)
 }
 weightConstructionIncubacionInfeccion=function(lags=7, parameterINC1=3.169434, parameterINC2=5.163921, parameterINF1=24.206087, parameterINF2=2.984198 ){
