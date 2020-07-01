@@ -27,3 +27,11 @@ plot(R$mode, type="l", ylab="Posterior R Mode")
 R = bayesian$fit2(I=sim2$I, window=7, prior_shape=1, prior_rate=2, omega=sim1$omega)
 lines(R$mode, type="l", ylab="Posterior R Mode", col="blue")
 legend("topleft", legend=c("Timedep omega", "Independent"), col=c("black", "blue"), pch=20)
+
+# Impartial model
+beta = c(rep(0.3, 25), rep(0.5, 25))
+impartial = simulate_impartial(steps=50, beta, tau1=3, tau2=7, I0=2)
+plot(impartial$I, type="l", col="red", ylab="Count")
+lines(impartial$expected_I, col="blue")
+lines(impartial$expected_conditional_I)
+legend("topleft", legend=c("I", "E[I]", "E[I | previous]"), col=c("red", "blue", "black"), pch=20)

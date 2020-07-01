@@ -21,6 +21,60 @@ simulate_bayesian = function(steps, phi, I0) {
               "omega"=discrete_pchisq))
 }
 
+simulate_impartial = function(steps, beta, tau1, tau2, I0) {
+  "
+  Simulate Cerón's impartial model.
+  
+  Parameters
+  ----------
+  steps : numeric
+    Number of steps in the simulation.
+  beta : numeric vector
+    Series where beta[t] is the expected number of people an infectious patient
+    will infect in step t.
+  tau1 : numeric
+    Expected number of days since exposure to infection onset.
+  tau2 : numeric
+    Expected number of days a patient remains infectious.
+  I0 : numeric
+    Number of intial just-infectious cases.
+  "
+  # initialize simulated vectors to be returned
+  E = 0
+  N = I0
+  I = I0
+  expected_I = I0
+  expected_E = 0
+  expected_N = I0
+  expected_conditional_I = I0
+  # carry out simulation and append to those vectors
+  for (t in 1:steps) {
+    I = c(I, rbinom(1, size=E[t], prob=1 / tau1))
+    E = c(E, E[t] - I[t + 1] + rpois(1, lambda=beta[t] * N[t]))
+    N = c(N, N[t] + I[t + 1] - rbinom(1, size=N[t], prob=1 / tau2))
+    # track expected values
+    expected_I = c(expected_I, expected_E[t] / tau1)
+    expected_E = c(expected_E, expected_E[t] - expected_I[t + 1] + expected_N[t] * beta[t])
+    expected_N = c(expected_N, expected_I[t + 1] + expected_N[t] * (1 - (1 / tau2)))
+    expected_conditional_I = c(expected_conditional_I, E[t] / tau1)
+  }
+  # calculate theoretical values
+  R = beta * tau2
+  f_inc = dgeom(1:steps, p=1 / tau1)
+  f_inf = dgeom(1:steps, p=1 / tau2)
+  omega = NULL
+  for (tau in 1:steps) {
+    omega = c(omega, 0) # so omega[tau] = 0
+    for (tau_prime in 0:(tau - 1)) {
+      omega[tau] = omega[tau] +
+                   pgeom(tau_prime - 1, p=1 / tau2, lower.tail=FALSE) *
+                   dgeom(tau - tau_prime - 1, p=1 / tau1)
+    }
+  }
+  return(list("I"=I, "E"=E, "N"=N, "expected_I"=expected_I, "expected_conditional_I"=expected_conditional_I,
+              "R"=R, "f_inc"=f_inc, "f_inf"=f_inf, "omega"=omega))
+}
+
 source("betaStateSpace/serial_interval_construction.R")
 simulate_bayesian2 = function(steps, phi, I0) {
   discrete_pchisq = weightConstructionSerialInterval(lags=steps)
