@@ -109,3 +109,27 @@ fit = function(observed_I, beta0, beta_min, beta_max, tau10, tau1_min,
   model$likelihood = (model$loss - lambda * mean(regularization)) * steps
   return(model)
 }
+
+fit_robust = function(observed_I, beta_min, beta_max, tau1_min, tau1_max,
+                      tau2_min, tau2_max, N0_min, N0_max, A0_min, A0_max, lambda,
+                      ignore_beta_diff, n_iter) {
+  best_loss = Inf
+  best_model = NULL
+  for (i in 1:n_iter) {
+    beta0 = runif(length(observed_I), beta_min, beta_max)
+    tau10 = runif(1, tau1_min, tau1_max)
+    tau20 = runif(1, tau2_min, tau2_max)
+    N00 = runif(1, N0_min, N0_max)
+    A00 = runif(1, A0_min, A0_max)
+    model = fit(observed_I, beta0=beta0, beta_min=beta_min, beta_max=beta_max,
+                tau10=tau10, tau1_min=tau1_min, tau1_max=tau1_max, tau20=tau20,
+                tau2_min=tau2_min, tau2_max=tau2_max, N00=N00, N0_min=N0_min,
+                N0_max=N0_max, A00=A00, A0_min=A0_min, A0_max=A0_max,
+                lambda=lambda, ignore_beta_diff=ignore_beta_diff)
+    if (model$loss < best_loss) {
+      best_model = model
+      best_loss = model$loss
+    }
+  }
+  return(best_model)
+}

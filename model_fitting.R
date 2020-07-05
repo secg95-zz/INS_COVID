@@ -68,7 +68,7 @@ fit_likelihood_exp = function(observed_I, beta0, beta_min, beta_max, tau10, tau1
 }
 
 
-fit_StateSpace=function(observed_I, f_inc, omega){
+fit_StateSpace=function(observed_I, f_inc, f_inf){
   "
   Fits the model to observed daily new case counts.
   
@@ -86,8 +86,7 @@ fit_StateSpace=function(observed_I, f_inc, omega){
   model : list
     model betas , R and R_c.
   "
-
-  
+  omega = "unos fores"
   priorMean=3/sum(omega)
   #Dependiente
   lags = length(observed_I)

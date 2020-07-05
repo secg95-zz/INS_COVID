@@ -46,7 +46,6 @@ simulate_impartial = function(steps, beta, tau1, tau2, I0) {
   expected_I = I0
   expected_E = 0
   expected_N = I0
-  expected_conditional_I = I0
   # carry out simulation and append to those vectors
   for (t in 1:steps) {
     I = c(I, rbinom(1, size=E[t], prob=1 / tau1))
@@ -56,7 +55,6 @@ simulate_impartial = function(steps, beta, tau1, tau2, I0) {
     expected_I = c(expected_I, expected_E[t] / tau1)
     expected_E = c(expected_E, expected_E[t] - expected_I[t + 1] + expected_N[t] * beta[t])
     expected_N = c(expected_N, expected_I[t + 1] + expected_N[t] * (1 - (1 / tau2)))
-    expected_conditional_I = c(expected_conditional_I, E[t] / tau1)
   }
   # calculate theoretical values
   R = beta * tau2
@@ -71,8 +69,11 @@ simulate_impartial = function(steps, beta, tau1, tau2, I0) {
                    dgeom(tau - tau_prime - 1, p=1 / tau1)
     }
   }
-  return(list("I"=I, "E"=E, "N"=N, "expected_I"=expected_I, "expected_conditional_I"=expected_conditional_I,
-              "R"=R, "f_inc"=f_inc, "f_inf"=f_inf, "omega"=omega))
+  omega = omega / tau2
+  return(list(
+    "I"=I, "E"=E, "N"=N, "expected_I"=expected_I, "R"=R, "f_inc"=f_inc,
+    "f_inf"=f_inf, "omega"=omega, "steps"=steps
+  ))
 }
 
 source("betaStateSpace/serial_interval_construction.R")
