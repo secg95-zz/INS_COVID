@@ -1,3 +1,45 @@
+get_expected = function(beta, tau1, tau2, N0, A0) {
+  "
+  Calculates expected new case counts for each step in the time series.
+  
+  Parameters
+  ----------
+  N0 : numeric
+    Initial number of contagious patients.
+  A0 : numeric
+    Initial number of asymptomatic patients.
+  beta : numeric vector
+    Expected number of cases stemming from a single person in a single day.
+    Lagged one step (beta[1] = beta(0) in our notation).
+  tau1 : numeric
+    Probability that an asymptomatic patient will turn contagious in the next
+    time step.
+  tau : numeric
+    (1 / mean) number of days an individual will continue to be infectious.
+  
+  Returns
+  -------
+  expected : list
+    Daily expected number of infectious (N), new asymptomatic (A), and new
+    infectious (I) patients.
+  "
+  steps = length(beta)
+  expected_I = rep(0, steps)
+  expected_N = rep(0, steps)
+  expected_A = rep(0, steps)
+  N_previous = N0
+  A_previous = A0
+  for(t in 1:steps) {
+    expected_I[t] = (1 - exp(-tau1)) * A_previous
+    expected_A[t] = (exp(-tau1) * A_previous) + (beta[t] * N_previous)
+    expected_N[t] = (exp(-tau2) * N_previous) + expected_I[t]
+    N_previous = expected_N[t]
+    A_previous = expected_A[t]
+  }
+  return(list("N"=c(N0, expected_N), "A"=c(A0, expected_A), "I"=expected_I))
+}
+
+
 fit_likelihood_exp = function(observed_I, beta0, beta_min, beta_max, tau10, tau1_min,
                tau1_max, tau20, tau2_min, tau2_max, N00, N0_min, N0_max, A00,
                A0_min, A0_max, lambda, ignore_beta_diff) {
@@ -30,6 +72,7 @@ fit_likelihood_exp = function(observed_I, beta0, beta_min, beta_max, tau10, tau1
   steps = length(observed_I)
   lb = c(rep(beta_min, steps), tau1_min, tau2_min, N0_min, A0_min)
   ub = c(rep(beta_max, steps), tau1_max, tau2_max, N0_max, A0_max)
+
   # set optimization parameters
   opts = list("algorithm" = "NLOPT_LN_BOBYQA", "xtol_rel" = 1.0e-7, "maxeval" = 10000000)
   # define loss function
