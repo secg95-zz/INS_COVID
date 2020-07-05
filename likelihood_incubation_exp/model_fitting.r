@@ -43,7 +43,7 @@ get_expected = function(beta, tau1, tau2, N0, A0) {
 
 fit = function(observed_I, beta0, beta_min, beta_max, tau10, tau1_min,
                tau1_max, tau20, tau2_min, tau2_max, N00, N0_min, N0_max, A00,
-               A0_min, A0_max, lambda, ignore_beta_diff) {
+               A0_min, A0_max, lambda, ignore_beta_diff, n_iter=10000000) {
   "
   Fits the model to observed daily new case counts.
   
@@ -74,7 +74,7 @@ fit = function(observed_I, beta0, beta_min, beta_max, tau10, tau1_min,
   lb = c(rep(beta_min, steps), tau1_min, tau2_min, N0_min, A0_min)
   ub = c(rep(beta_max, steps), tau1_max, tau2_max, N0_max, A0_max)
   # set optimization parameters
-  opts = list("algorithm" = "NLOPT_LN_BOBYQA", "xtol_rel" = 1.0e-7, "maxeval" = 10000000)
+  opts = list("algorithm" = "NLOPT_LN_BOBYQA", "xtol_rel" = 1.0e-7, "maxeval" = n_iter)
   # define loss function
   loss = function(x) {
     # unpack values
@@ -133,3 +133,63 @@ fit_robust = function(observed_I, beta_min, beta_max, tau1_min, tau1_max,
   }
   return(best_model)
 }
+
+search_best_model = function(observed_I, beta_min, beta_max, tau1_min, tau1_max,
+                      tau2_min, tau2_max, N0_min, N0_max, A0_min, A0_max,
+                      ignore_beta_diff, n_iter,search=FALSE) {
+    best_loss = Inf
+    best_model = NULL
+    for (i in 1:n_iter) {
+      beta0 = runif(length(observed_I), beta_min, beta_max)
+      tau10 = runif(1, tau1_min, tau1_max)
+      tau20 = runif(1, tau2_min, tau2_max)
+      N00 = runif(1, N0_min, N0_max)
+      A00 = runif(1, A0_min, A0_max)
+      model = fit(observed_I, beta0=beta0, beta_min=beta_min, beta_max=beta_max,
+                  tau10=tau10, tau1_min=tau1_min, tau1_max=tau1_max, tau20=tau20,
+                  tau2_min=tau2_min, tau2_max=tau2_max, N00=N00, N0_min=N0_min,
+                  N0_max=N0_max, A00=A00, A0_min=A0_min, A0_max=A0_max,
+                  lambda=0, ignore_beta_diff=ignore_beta_diff,n_iter=10000000)
+      if (model$loss < best_loss) {
+        best_model = model
+        best_loss = model$loss
+        best_param=list(
+          "beta0"=beta0,
+          "tau10"=tau10,
+          "tau20"=tau20,
+          "N00"=N00,
+          "A00"=A00
+        )
+      }
+    }
+    if(search){
+    p_value = 0
+    c_left = 0
+    c_right = 1e20
+    p_values = 0
+    cs = c_left
+    while( 0.93 > p_value | 0.96 < p_value)
+    {
+      c = (c_left + c_right)/2
+      model = fit(observed_I, beta0=best_model$beta, beta_min=beta_min, beta_max=max(beta_max,best_model$beta),
+                  tau10=best_param$tau10, tau1_min=tau1_min, tau1_max=tau1_max, tau20=best_param$tau20,
+                  tau2_min=tau2_min, tau2_max=tau2_max, N00=best_param$N00, N0_min=N0_min,
+                  N0_max=N0_max, A00=best_param$A00, A0_min=A0_min, A0_max=A0_max,
+                  lambda=c, ignore_beta_diff=ignore_beta_diff,n_iter=10)
+      LRTest=2*(model$loss-best_loss)
+      p_value=pchisq(LRTest,length(best_model$beta), lower.tail=TRUE) 
+      p_values = c(p_values,p_value)
+      cs = c(cs,c)
+      if(p_value < 0.95)
+      {
+       c_left = c     
+      }
+      if(p_value > 0.96)
+      {
+        c_right = c
+      }
+    }
+      return(model)
+    }
+    return(best_model)
+    }
