@@ -1,6 +1,6 @@
 library(nloptr)
 
-get_expected = function(beta, tau1, tau2, N0, A0) {
+get_expected = function(beta, tau1, tau2, N0, A0, observed_I=NULL) {
   "
   Calculates expected new case counts for each step in the time series.
   
@@ -35,7 +35,11 @@ get_expected = function(beta, tau1, tau2, N0, A0) {
     expected_I[t] = (1 - exp(-tau1)) * A_previous
     expected_A[t] = (exp(-tau1) * A_previous) + (beta[t] * N_previous)
     expected_N[t] = (exp(-tau2) * N_previous) + expected_I[t]
-    N_previous = expected_N[t]
+    if (is.null(observed_I)) { # history not available
+      N_previous = expected_N[t]
+    } else { # history available; use it
+      N_previous = sum(c(N0, observed_I[1:t]) * rev(pexp(0:t, rate=tau2, lower.tail=FALSE)))
+    }
     A_previous = expected_A[t]
   }
   return(list("N"=c(N0, expected_N), "A"=c(A0, expected_A), "I"=expected_I))
@@ -43,7 +47,7 @@ get_expected = function(beta, tau1, tau2, N0, A0) {
 
 fit = function(observed_I, beta0, beta_min, beta_max, tau10, tau1_min,
                tau1_max, tau20, tau2_min, tau2_max, N00, N0_min, N0_max, A00,
-               A0_min, A0_max, lambda, ignore_beta_diff) {
+               A0_min, A0_max, lambda, ignore_beta_diff, use_history) {
   "
   Fits the model to observed daily new case counts.
   
@@ -84,7 +88,12 @@ fit = function(observed_I, beta0, beta_min, beta_max, tau10, tau1_min,
     N0 = x[steps + 3]
     A0 = x[steps + 4]
     # calculate loss
-    expected = get_expected(beta, tau1, tau2, N0, A0)
+    if (use_history) {
+      expected = get_expected(beta, tau1, tau2, N0, A0, observed_I)
+    } else {
+      expected = get_expected(beta, tau1, tau2, N0, A0)
+    }
+    
     regularization =  (diff(beta) / beta[1:(steps - 1)]) ^ 2
     regularization = regularization[!1:length(regularization) %in% ignore_beta_diff]
     observed_I = round(observed_I, 0)
@@ -97,6 +106,7 @@ fit = function(observed_I, beta0, beta_min, beta_max, tau10, tau1_min,
   }
   result = nloptr(x0=x0, eval_f=loss, lb=lb, ub=ub, opts=opts)
   model = list(
+    "R" = result$solution[1:steps] / result$solution[steps + 2],
     "beta" = result$solution[1:steps],
     "tau1" = result$solution[steps + 1],
     "tau2" = result$solution[steps + 2],
@@ -112,7 +122,7 @@ fit = function(observed_I, beta0, beta_min, beta_max, tau10, tau1_min,
 
 fit_robust = function(observed_I, beta_min, beta_max, tau1_min, tau1_max,
                       tau2_min, tau2_max, N0_min, N0_max, A0_min, A0_max, lambda,
-                      ignore_beta_diff, n_iter) {
+                      ignore_beta_diff, use_history, n_iter) {
   best_loss = Inf
   best_model = NULL
   for (i in 1:n_iter) {
@@ -125,7 +135,8 @@ fit_robust = function(observed_I, beta_min, beta_max, tau1_min, tau1_max,
                 tau10=tau10, tau1_min=tau1_min, tau1_max=tau1_max, tau20=tau20,
                 tau2_min=tau2_min, tau2_max=tau2_max, N00=N00, N0_min=N0_min,
                 N0_max=N0_max, A00=A00, A0_min=A0_min, A0_max=A0_max,
-                lambda=lambda, ignore_beta_diff=ignore_beta_diff)
+                lambda=lambda, ignore_beta_diff=ignore_beta_diff,
+                use_history=use_history)
     if (model$loss < best_loss) {
       best_model = model
       best_loss = model$loss

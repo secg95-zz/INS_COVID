@@ -47,7 +47,7 @@ simulate_impartial = function(steps, beta, tau1, tau2, I0) {
   expected_E = 0
   expected_N = I0
   # carry out simulation and append to those vectors
-  for (t in 1:steps) {
+  for (t in 1:(steps - 1)) {
     I = c(I, rbinom(1, size=E[t], prob=1 / tau1))
     E = c(E, E[t] - I[t + 1] + rpois(1, lambda=beta[t] * N[t]))
     N = c(N, N[t] + I[t + 1] - rbinom(1, size=N[t], prob=1 / tau2))
@@ -71,8 +71,8 @@ simulate_impartial = function(steps, beta, tau1, tau2, I0) {
   }
   omega = omega / tau2
   return(list(
-    "I"=I[-1], "E"=E[-1], "N"=N[-1], "expected_I"=expected_I[-1], "R"=R, "f_inc"=f_inc,
-    "f_inf"=f_inf, "omega"=omega, "steps"=steps
+    "I"=I, "E"=E, "N"=N, "expected_I"=expected_I, "R"=R, "f_inc"=f_inc,
+    "f_inf"=f_inf, "omega"=omega, "steps"=steps, "tau1"=tau1, "tau2"=tau2
   ))
 }
 
