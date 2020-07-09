@@ -47,7 +47,7 @@ get_expected = function(beta, tau1, tau2, N0, A0, observed_I=NULL) {
 
 fit = function(observed_I, beta0, beta_min, beta_max, tau10, tau1_min,
                tau1_max, tau20, tau2_min, tau2_max, N00, N0_min, N0_max, A00,
-               A0_min, A0_max, lambda, ignore_beta_diff, use_history) {
+               A0_min, A0_max, lambda, ignore_beta_diff, use_history, n_iter=100000) {
   "
   Fits the model to observed daily new case counts.
   
