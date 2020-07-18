@@ -3,7 +3,7 @@ library(rlist)
 library(Rlab)
 library(bssm)
 
-fit = function(observed_I, f_inc, f_inf, prior_R){
+fit = function(observed_I, f_inc, f_inf, prior_R, lags=9, lags2=5){
   "
   Parameters
   ----------
@@ -28,41 +28,46 @@ fit = function(observed_I, f_inc, f_inf, prior_R){
       omega[tau] = omega[tau] + f_inc[tau_prime] * right_tail_inf[tau - tau_prime + 1]
     }
   }
-  priorMean= prior_R / sum(omega)
-  #Dependiente
-  lags = length(observed_I)
-  incubPotential_T = 1:length(lags)
+
+  priorMean= prior_R / sum(omega,na.rm=TRUE)
+
+
+#omega=weightConstructionIncubacionInfeccion(lags, parameterINC1, parameterINC2, parameterINF1, parameterINF2)
+#f=weightConstructionIncubacion(lags2, parameterINC1, parameterINC2)
   
-  for(i in 1:(lags-1)){
-    infected_t = 0
-    for(j in 1:(lags-i)){
-      infected_t = infected_t + observed_I[i + j]*f_inc[j]
-    }
-    incubPotential_T[i] = infected_t
+#priorMean=3/sum(omega)
+f = rev(f_inc[1:lags2])
+
+lags3 = 5
+#cases=base$newCases
+  initialVector=observed_I[1:lags3]
+  cases= observed_I[(lags3 +1):length(observed_I)]
+  
+ #Dependiente
+  casesMatrix_T=matrix(0,length(cases)-lags2+1,lags2)
+  for(i in 1:dim(casesMatrix_T)[1]){
+    casesMatrix_T[i,]=cases[i:(i+lags2-1)]
   }
+  incubPotential_T=casesMatrix_T%*%f
   
+  omega = omegas[1:lags]
+  #omega = c(7.036085e-05, 2.780978e-04, 1.004378e-03, 3.292317e-03, 9.729875e-03,
+  #          2.576155e-02, 6.077233e-02, 1.272087e-01, 2.357822e-01)
+  omega = rev(omega)
   
   #Independiente
-  #longCases=c(initialVector,cases)
-  infectPotential_T=observed_I
-  
-  for(i in 2:lags){
-    caseMatrix_t=0
-    for(j in 1:(i-1)){
-      caseMatrix_t = caseMatrix_t + observed_I[i-j]*omega[j]
-    }     
-    infectPotential_T[i]=caseMatrix_t
+  longCases=c(initialVector,cases)
+  casesMatrix_T=matrix(0,length(longCases)-lags,lags)
+  for(i in 1:dim(casesMatrix_T)[1]){
+    casesMatrix_T[i,]=longCases[i:(i+lags-1)]
   }
-  #infectPotential_T=casesMatrix_T%*%omega
+  infectPotential_T=casesMatrix_T%*%omega
   infectPotential_T=infectPotential_T[1:length(incubPotential_T)]
-  if (sum(infectPotential_T[1:2]) ==0){
-    infectPotential_T[1:2] = 1
-  }
   
-  pars=c(0,0)
   
-  obj1 <- function(pars) {
-    tryCatch({
+   pars=c(0,0)
+    obj1 <- function(pars) {
+      tryCatch({
       pars2=pars
       pars2=exp(pars2)
       x=log(infectPotential_T) 
@@ -87,54 +92,56 @@ fit = function(observed_I, f_inc, f_inf, prior_R){
       if(objectiveFunction==-Inf){
         objectiveFunction=-objectiveFunction
       }
-    }, error = function(e) {
-      objectiveFunction=Inf
-    } )
-    return(objectiveFunction)
-  }
-  
-  lb=c(-10,-10)
-  ub=c(10,10)
-  x0 = c(0,0)
-  
-  local_opts = list( "algorithm" = "NLOPT_LN_BOBYQA",
-                     "xtol_rel" = 1.0e-7 )
-  opts = list( "algorithm" = "NLOPT_LN_BOBYQA",
-               "xtol_rel" = 1.0e-7,
-               "maxeval" = 100000,
-               "local_opts" = local_opts )
-  
-  res = nloptr( x0=x0, eval_f=obj1, eval_grad_f=NULL,lb=lb, ub=ub, opts=opts)
-  pars=res$solution
-  pars2=pars
-  pars2=exp(pars2)
-  x=log(infectPotential_T) 
-  y=as.matrix(incubPotential_T)
-  Z=t(cbind(as.matrix(x),1,0))
-  n=length(incubPotential_T)
-  dim(Z)=c(1,3,n)
-  Z=as.array(Z)
-  Ti=rep(c(1,0,0,0,1,0,0,1,1),n)
-  dim(Ti)=c(3,3,n)
-  
-  R=rep(c(0,pars2[1],0,0,0,pars2[2]),n)
-  dim(R)=c(3,2,n)
-  
-  a1=c(1,priorMean,priorMean)
-  P1=diag(c(0,10^9,10^9))
-  distribution="poisson"
-  u=0
-  model=ssm_mng(y, Z, Ti, R, a1, P1, distribution, state_names=c("Base", "Beta", "Beta_P"))
-  betaT=sim_smoother(model, nsim = 1)[-1,2,1] 
-  for(h in 2:1000){
-    betaT=cbind(betaT,sim_smoother(model, nsim = 1)[-1,2,1])  
-  }
-  
-  beta=exp(betaT)
-  
-  simuQL=function(simu){
-    return(quantile(simu,c(0.05,0.95)))
-  }
+      }, error = function(e) {
+        objectiveFunction=Inf
+      } )
+      return(objectiveFunction)
+    }
+    
+    lb=c(-10,-10)
+    ub=c(10,10)
+    x0 = c(0,0)
+    
+    local_opts = list( "algorithm" = "NLOPT_LN_BOBYQA",
+                       "xtol_rel" = 1.0e-7 )
+    opts = list( "algorithm" = "NLOPT_LN_BOBYQA",
+                 "xtol_rel" = 1.0e-7,
+                 "maxeval" = 100000,
+                 "local_opts" = local_opts )
+    
+    res = nloptr( x0=x0, eval_f=obj1, eval_grad_f=NULL,lb=lb, ub=ub, opts=opts)
+    pars=res$solution
+   
+    
+    pars2=pars
+    pars2=exp(pars2)
+    x=log(infectPotential_T) 
+    y=as.matrix(incubPotential_T)
+    Z=t(cbind(as.matrix(x),1,0))
+    n=length(incubPotential_T)
+    dim(Z)=c(1,3,n)
+    Z=as.array(Z)
+    Ti=rep(c(1,0,0,0,1,0,0,1,1),n)
+    dim(Ti)=c(3,3,n)
+    
+    R=rep(c(0,pars2[1],0,0,0,pars2[2]),n)
+    dim(R)=c(3,2,n)
+    
+    a1=c(1,priorMean,priorMean)
+    P1=diag(c(0,10^9,10^9))
+    distribution="poisson"
+    u=0
+    model=ssm_mng(y, Z, Ti, R, a1, P1, distribution, state_names=c("Base", "Beta", "Beta_P"))
+    betaT=sim_smoother(model, nsim = 1)[-1,2,1] 
+    for(h in 2:1000){
+      betaT=cbind(betaT,sim_smoother(model, nsim = 1)[-1,2,1])  
+    }
+    
+    beta=exp(betaT)
+
+    simuQL=function(simu){
+      return(quantile(simu,c(0.05,0.95)))
+    }
   
   data=cbind(t(apply(beta, 1, simuQL)),apply(beta, 1, mean))
   colnames(data)=c("lb","ub", "beta")
