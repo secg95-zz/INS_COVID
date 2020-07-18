@@ -31,7 +31,6 @@ legend("topleft", legend=c("I", "E[I]"), col=c("black", "blue"), pch=20)
 # fit models and store plots
 fit_all(sim3, "scenario3", lambda1=2^25, lambda2=2^5)
 
-
 # Scenario 4: Step-wise increasing beta
 beta = c(rep(0.2, 25), rep(0.5, 25))
 sim4 = simulate_impartial(steps=50, beta, tau1=3, tau2=7, I0=5)
@@ -70,4 +69,4 @@ plot(sim7$I, type="l", ylab="Count", xlab="t", ylim=c(0, max(c(sim7$I, sim7$expe
 lines(sim7$expected_I, col="blue")
 legend("topleft", legend=c("I", "E[I]"), col=c("black", "blue"), pch=20)
 # fit models and store plots
-fit_all(sim7, "scenario7", ignore_beta_diff=30, lambda1=2^25, lambda2=2^5)
+fit_all(sim7, "scenario7", ignore_beta_diff=30, lambda1=2^28, lambda2=2^5)
