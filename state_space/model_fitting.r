@@ -50,7 +50,7 @@ lags3 = 5
   }
   incubPotential_T=casesMatrix_T%*%f
   
-  omega = omegas[1:lags]
+  omega = omega[1:lags]
   #omega = c(7.036085e-05, 2.780978e-04, 1.004378e-03, 3.292317e-03, 9.729875e-03,
   #          2.576155e-02, 6.077233e-02, 1.272087e-01, 2.357822e-01)
   omega = rev(omega)

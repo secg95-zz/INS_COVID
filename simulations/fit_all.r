@@ -28,8 +28,9 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda1=2^10, lambda
     simulation$I, window=7, prior_shape=prior_shape, prior_rate=prior_rate,
     omega=simulation$omega
   )$mode
+  lags =9
   ss_fit = ss$fit(
-    simulation$I, f_inc=simulation$f_inc, f_inf=simulation$f_inf, prior_R=3
+    simulation$I, f_inc=simulation$f_inc, f_inf=simulation$f_inf, prior_R=3, lags=lags
   )# $data$R
   poisson_fit = poisson$fit_robust(
     simulation$I, beta_min=0.05, beta_max=2, tau1_min=1/tau1, tau1_max=1/tau1,
@@ -58,7 +59,7 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda1=2^10, lambda
   relevant = relevant[1]:relevant[2]
   R_smape = list(
     "bayesian"=smape(bayesian_fit[relevant], simulation$R[relevant]),
-    "ss"=smape(ss_fit$data$R[relevant], simulation$R[relevant]),
+    "ss"=smape(c(rep(NaN,lags),ss_fit$data$R)[relevant], simulation$R[relevant]),
     "poisson"=smape(poisson_fit$R[relevant], simulation$R[relevant]),
     "poisson2"=smape(poisson2_fit$R[relevant], simulation$R[relevant])
   )
