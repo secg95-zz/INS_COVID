@@ -3,7 +3,7 @@ library(rlist)
 library(Rlab)
 library(bssm)
 
-fit = function(observed_I, f_inc, f_inf, prior_R, lags=9, lags2=5){
+fit = function(observed_I, f_inc, f_inf, prior_R, lags=7, lags2=3){
   "
   Parameters
   ----------
@@ -29,19 +29,22 @@ fit = function(observed_I, f_inc, f_inf, prior_R, lags=9, lags2=5){
     }
   }
 
-  priorMean= prior_R / sum(omega,na.rm=TRUE)
+  f = f_inc[1:lags2]
+  f = f/sum(f)
 
-
-#omega=weightConstructionIncubacionInfeccion(lags, parameterINC1, parameterINC2, parameterINF1, parameterINF2)
-#f=weightConstructionIncubacion(lags2, parameterINC1, parameterINC2)
+  infection_time = sum(omega,na.rm=TRUE)
+  priorMean= prior_R / infection_time
   
-#priorMean=3/sum(omega)
-f = rev(f_inc[1:lags2])
 
-lags3 = 5
+
+  expected_value = sum((omega/sum(omega))*seq(1,length(omega)))
+
+
+
+lags3 = 9
 #cases=base$newCases
-  initialVector=observed_I[1:lags3]
-  cases= observed_I[(lags3 +1):length(observed_I)]
+  initialVector=rep(0,lags3)
+  cases= observed_I
   
  #Dependiente
   casesMatrix_T=matrix(0,length(cases)-lags2+1,lags2)
@@ -49,11 +52,10 @@ lags3 = 5
     casesMatrix_T[i,]=cases[i:(i+lags2-1)]
   }
   incubPotential_T=casesMatrix_T%*%f
-  
+
   omega = omega[1:lags]
-  #omega = c(7.036085e-05, 2.780978e-04, 1.004378e-03, 3.292317e-03, 9.729875e-03,
-  #          2.576155e-02, 6.077233e-02, 1.272087e-01, 2.357822e-01)
-  omega = rev(omega)
+ 
+  omega = rev(omega*infection_time/sum(omega))
   
   #Independiente
   longCases=c(initialVector,cases)
@@ -63,6 +65,7 @@ lags3 = 5
   }
   infectPotential_T=casesMatrix_T%*%omega
   infectPotential_T=infectPotential_T[1:length(incubPotential_T)]
+  infectPotential_T[1]=1
   
   
    pars=c(0,0)
