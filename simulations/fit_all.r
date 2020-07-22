@@ -12,10 +12,17 @@ smape = function(x, y) {
 fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda1=2^10, lambda2=2^20) {
   out_dir = paste("simulations", name, sep="/")
   dir.create(out_dir, recursive=TRUE)
-  png(paste(out_dir, "I.png", sep="/"))
-  plot(simulation$I, type="l", ylab="Count", xlab="t", ylim=c(0, max(c(simulation$I, simulation$expected_I))))
-  lines(simulation$expected_I, col="blue")
+  png(paste(out_dir, "I.png", sep="/"), pointsize=20, width=460, height=420)
+  par(mar = c(3, 3, 1, 1))
+  plot(simulation$I, type="l", ylim=c(0, max(c(simulation$I, simulation$expected_I))),
+       xaxt="n", yaxt="n", xlab="", ylab="", lwd=2)
+  lines(simulation$expected_I, col="blue", lwd=2)
   legend("topleft", legend=c("I", "E[I]"), col=c("black", "blue"), pch=20)
+  # write axis labels closer to plot
+  title(xlab="t", ylab="Incidencias", line=1.7)
+  # bring tick labels closer to plot
+  axis(2, mgp=c(3, .5, 0))
+  axis(1, mgp=c(3, .5, 0))
   dev.off()
   # assign priors by adding a small amount of noise to theoretical values
   prior_R = mean(simulation$R) + rnorm(1, sd=0.5)
@@ -23,13 +30,14 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda1=2^10, lambda
   prior_shape = (prior_R * prior_rate) + 1
   tau1 = simulation$tau1
   tau2 = simulation$tau2
+  lags = 9
   # fit models
   bayesian_fit = bayesian$fit2(
     simulation$I, window=7, prior_shape=prior_shape, prior_rate=prior_rate,
     omega=simulation$omega
   )$mode
   ss_fit = ss$fit(
-    simulation$I, f_inc=simulation$f_inc, f_inf=simulation$f_inf, prior_R=3, lags=lags
+    simulation$I, f_inc=c(0, simulation$f_inc), f_inf=c(0, simulation$f_inf), prior_R=prior_R, lags=lags
   )# $data$R
   plot(simulation$R, type="l", ylab="R", xlab="t", ylim=c(0, max(
     c(ss_fit$data$R, simulation$R),na.rm=TRUE)))
@@ -45,23 +53,34 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda1=2^10, lambda
     lambda=lambda2, ignore_beta_diff=ignore_beta_diff, use_history=TRUE, n_iter=10
   )
   # store R graphical comparison
-  png(paste(out_dir, "R.png", sep="/"))
-  plot(simulation$R, type="l", ylab="R", xlab="t", ylim=c(0, max(
-    c(bayesian_fit, ss_fit$data$R, poisson_fit$R, poisson2_fit$R, simulation$R),
-    na.rm=TRUE)))
-  lines(bayesian_fit, col="blue")
-  lines(ss_fit$data$R, col="green")
-  lines(poisson_fit$R, col="red")
-  lines(poisson2_fit$R, col="purple")
-  legend("topleft", legend=c("Teórico", "Bayesiano", "EE", "Poisson", "Poisson 2"),
-         col=c("black", "blue", "green", "red", "purple"), pch=20)
+  png(paste(out_dir, "R.png", sep="/"), pointsize=20, width=460, height=420)
+  par(mar = c(3, 3, 1, 1))
+  plot(simulation$R, type="l", xaxt="n", yaxt="n", xlab="", ylab="", lwd=2,
+       ylim=c(0, 1.5 * max(c(bayesian_fit, ss_fit$data$R, poisson_fit$R, poisson2_fit$R, simulation$R), na.rm=TRUE)))
+  lines(bayesian_fit, col=2, lwd=2)
+  lines(ss_fit$data$R, col=3, lwd=2)
+  lines(poisson_fit$R, col=4, lwd=2)
+  lines(poisson2_fit$R, col=5, lwd=2)
+  legend_position = "topleft"
+  if (name %in% c("scenario3", "scenario5")) legend_position = "topright"
+  legend(legend_position, legend=c("Teórico", "Bayesiano", "EE", "Poisson", "Poisson 2"),
+         col=1:5, pch=20, xpd=TRUE)
+  # write axis labels closer to plot
+  title(xlab="t", ylab="R", line=1.7)
+  # bring tick labels closer to plot
+  axis(2, mgp=c(3, .5, 0))
+  axis(1, mgp=c(3, .5, 0))
   dev.off()
   # store R SMAPE with respect to theoretical
   relevant = round(simulation$steps * c(0.1, 0.9))
   relevant = relevant[1]:relevant[2]
   R_smape = list(
     "bayesian"=smape(bayesian_fit[relevant], simulation$R[relevant]),
+<<<<<<< HEAD
     "ss"=smape(ss_fit$data$R)[relevant], simulation$R[relevant]),
+=======
+    "ss"=smape(c(rep(NaN,lags), ss_fit$data$R)[relevant], simulation$R[relevant]),
+>>>>>>> e257e6f3440ec4d136ab3400edd549e92d37110e
     "poisson"=smape(poisson_fit$R[relevant], simulation$R[relevant]),
     "poisson2"=smape(poisson2_fit$R[relevant], simulation$R[relevant])
   )
