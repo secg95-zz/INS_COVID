@@ -58,8 +58,8 @@ simulate_impartial = function(steps, beta, tau1, tau2, I0) {
   }
   # calculate theoretical values
   R = beta * tau2
-  f_inc = dgeom(1:steps, p=1 / tau1)
-  f_inf = dgeom(1:steps, p=1 / tau2)
+  f_inc = dgeom(1:steps - 1, p=1 / tau1)
+  f_inf = dgeom(1:steps - 1, p=1 / tau2)
   omega = NULL
   for (tau in 1:steps) {
     omega = c(omega, 0) # so omega[tau] = 0
@@ -70,9 +70,25 @@ simulate_impartial = function(steps, beta, tau1, tau2, I0) {
     }
   }
   omega = omega / tau2
+  # alternative tau calculation
+  omega_alt = rep(0, length=steps)
+  prob1 = dgeom((-1):(2 * steps), p=1/tau1)
+  prob2 = dgeom((-1):(2 * steps), p=1/tau2)
+  for(i in 1:(steps + 1)){
+    for(j in 1:(steps + 1)){
+      if(i + j - 2 < steps){
+        # omega_alt[i+j-1] = omega_alt[i+j-1] + dgeom(i-2, p=1/tau1) *
+        #                    (dgeom(2*j - 2, p=1/tau2) + dgeom(2*j - 3, p=1/tau2))
+        omega_alt[i+j-1]=omega_alt[i+j-1]+prob1[i]*(prob2[2*j]+prob2[2*j-1])
+      }
+    } 
+  }
+  # supress starting 0
+  omega_alt = c(omega_alt[2:steps], 0)
   return(list(
     "I"=I, "E"=E, "N"=N, "expected_I"=expected_I, "R"=R, "f_inc"=f_inc,
-    "f_inf"=f_inf, "omega"=omega, "steps"=steps, "tau1"=tau1, "tau2"=tau2
+    "f_inf"=f_inf, "steps"=steps, "tau1"=tau1, "tau2"=tau2, "omega"=omega,
+    "omega_alt"=omega_alt
   ))
 }
 
