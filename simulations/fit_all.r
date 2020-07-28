@@ -9,7 +9,7 @@ smape = function(x, y) {
   mean(abs(x - y) / ((abs(x) + abs(y)) / 2), na.rm=TRUE)
 }
 
-fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda1=2^10, lambda2=2^20) {
+fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
   out_dir = paste("simulations", name, sep="/")
   dir.create(out_dir, recursive=TRUE)
   png(paste(out_dir, "I.png", sep="/"), pointsize=20, width=460, height=420)
@@ -30,6 +30,7 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda1=2^10, lambda
   prior_shape = (prior_R * prior_rate) + 1
   tau1 = simulation$tau1
   tau2 = simulation$tau2
+  steps = simulation$steps
   lags = 9
   # fit models
   bayesian_fit = bayesian$fit2(
@@ -37,34 +38,35 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda1=2^10, lambda
     omega=simulation$omega
   )$mode
   ss_fit = ss$fit(
-    simulation$I, f_inc=c(0, simulation$f_inc), f_inf=c(0, simulation$f_inf), prior_R=prior_R, lags=lags
+    simulation$I, f_inc=c(1e-30, simulation$f_inc[1:(steps - 1)]), f_inf=c(0, simulation$f_inf[1:(steps - 1)]), prior_R=prior_R, lags=lags
   )# $data$R
-  plot(simulation$R, type="l", ylab="R", xlab="t", ylim=c(0, max(
-    c(ss_fit$data$R, simulation$R),na.rm=TRUE)))
-  lines(ss_fit$data$R, col="green")
-  poisson_fit = poisson$fit_robust(
-    simulation$I, beta_min=0.05, beta_max=2, tau1_min=1/tau1, tau1_max=1/tau1,
-    tau2_min=1/tau2, tau2_max=1/tau2, N0_min=0, N0_max=5, A0_min=0, A0_max=5,
-    lambda=lambda1, ignore_beta_diff=ignore_beta_diff, use_history=FALSE, n_iter=10
-  )
-  poisson2_fit = poisson$fit_robust(
-    simulation$I, beta_min=0.05, beta_max=2, tau1_min=1/3, tau1_max=1/3,
-    tau2_min=1/7, tau2_max=1/7, N0_min=0, N0_max=5, A0_min=0, A0_max=5,
-    lambda=lambda2, ignore_beta_diff=ignore_beta_diff, use_history=TRUE, n_iter=10
-  )
+  poisson_fit = list()
+  for (i in 1:length(lambda)) {
+    poisson_fit[[i]] = poisson$fit_robust(
+      simulation$I, beta_min=0.05, beta_max=2, tau1_min=1/tau1, tau1_max=1/tau1,
+      tau2_min=1/tau2, tau2_max=1/tau2, N0_min=1, N0_max=5, A0_min=0, A0_max=5,
+      lambda=lambda[i], ignore_beta_diff=ignore_beta_diff, use_history=FALSE, n_iter=20
+    )
+  }
   # store R graphical comparison
   png(paste(out_dir, "R.png", sep="/"), pointsize=20, width=460, height=420)
   par(mar = c(3, 3, 1, 1))
+  y_max = max(c(bayesian_fit, ss_fit$data$R, simulation$R), na.rm=TRUE)
+  for (i in 1:length(lambda)) {
+    y_max = max(c(y_max, poisson_fit[[i]]$R), na.rm=TRUE)
+  }
   plot(simulation$R, type="l", xaxt="n", yaxt="n", xlab="", ylab="", lwd=2,
-       ylim=c(0, 1.5 * max(c(bayesian_fit, ss_fit$data$R, poisson_fit$R, poisson2_fit$R, simulation$R), na.rm=TRUE)))
+       ylim=c(0, 10))
   lines(bayesian_fit, col=2, lwd=2)
   lines(ss_fit$data$R, col=3, lwd=2)
-  lines(poisson_fit$R, col=4, lwd=2)
-  lines(poisson2_fit$R, col=5, lwd=2)
+  for (i in 1:length(lambda)) {
+    lines(poisson_fit[[i]]$R, col=3+i, lwd=2)
+  }
   legend_position = "topleft"
   if (name %in% c("scenario3", "scenario5")) legend_position = "topright"
-  legend(legend_position, legend=c("Teórico", "Bayesiano", "EE", "Poisson", "Poisson 2"),
-         col=1:5, pch=20, xpd=TRUE)
+  legend(legend_position, col=1:5, pch=20, xpd=TRUE,
+         legend=c("Teórico", "Bayesiano", "EE", paste("Poisson", 1:length(lambda)))
+         )
   # write axis labels closer to plot
   title(xlab="t", ylab="R", line=1.7)
   # bring tick labels closer to plot
@@ -76,18 +78,16 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda1=2^10, lambda
   relevant = relevant[1]:relevant[2]
   R_smape = list(
     "bayesian"=smape(bayesian_fit[relevant], simulation$R[relevant]),
-<<<<<<< HEAD
-    "ss"=smape(ss_fit$data$R)[relevant], simulation$R[relevant]),
-=======
-    "ss"=smape(c(rep(NaN,lags), ss_fit$data$R)[relevant], simulation$R[relevant]),
->>>>>>> e257e6f3440ec4d136ab3400edd549e92d37110e
-    "poisson"=smape(poisson_fit$R[relevant], simulation$R[relevant]),
-    "poisson2"=smape(poisson2_fit$R[relevant], simulation$R[relevant])
+    "ss"=smape(ss_fit$data$R[relevant], simulation$R[relevant])
   )
+  for (i in 1:length(lambda)) {
+    R_smape[[paste("Poisson", i)]] = smape(poisson_fit[[i]]$R[relevant], simluation$R[relevant])
+  }
   write(toJSON(R_smape), paste(out_dir, "R_smape.json", sep="/"))
   # store fitted models
-  write(toJSON(poisson_fit), paste(out_dir, "poisson_fit.json", sep="/"))
-  write(toJSON(poisson2_fit), paste(out_dir, "poisson2_fit.json", sep="/"))
+  for (i in 1:length(lambda)) {
+    write(toJSON(poisson_fit[[i]]), paste(out_dir, paste0("poisson_", i, "_fit.json"), sep="/"))
+  }
   # store priors
   priors = list("prior_R"=prior_R, "prior_rate"=prior_rate,
                 "prior_shape"=prior_shape, "tau1"=tau1, "tau2"=tau2)
