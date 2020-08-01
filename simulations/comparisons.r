@@ -29,7 +29,7 @@ plot(sim3$I, type="l", ylab="Count", xlab="t", ylim=c(0, max(c(sim3$I, sim3$expe
 lines(sim3$expected_I, col="blue")
 legend("topleft", legend=c("I", "E[I]"), col=c("black", "blue"), pch=20)
 # fit models and store plots
-fit_all(sim3, "scenario3", lambda=c(0, 2^8, 2^15))
+fit_all(sim3, "scenario3", ignore_beta_diff=NULL, lambda=c(0, 2^8, 2^15))
 
 # Scenario 4: Step-wise increasing beta
 beta = c(rep(0.2, 25), rep(0.5, 25))
@@ -39,7 +39,7 @@ plot(sim4$I, type="l", ylab="Count", xlab="t", ylim=c(0, max(c(sim4$I, sim4$expe
 lines(sim4$expected_I, col="blue")
 legend("topleft", legend=c("I", "E[I]"), col=c("black", "blue"), pch=20)
 # fit models and store plots
-fit_all(sim4, "scenario4", ignore_beta_diff=25, lambda=c(0, 2^20, 2^30))
+fit_all(sim4, "scenario4", ignore_beta_diff=25, lambda=c(0, 2^18, 2^30))
 
 # Scenario 5: Step-wise decreasing beta
 beta = c(rep(0.5, 25), rep(0.2, 25))

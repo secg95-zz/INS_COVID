@@ -5,8 +5,8 @@ bayesian = new.env(); source("bayesian/model_fitting.r", local=bayesian)
 ss = new.env(); source("state_space/model_fitting.r", local=ss)
 poisson = new.env(); source("likelihood_incubation_exp/model_fitting.r", local=poisson)
 # R series comparison method
-smape = function(x, y) {
-  mean(abs(x - y) / ((abs(x) + abs(y)) / 2), na.rm=TRUE)
+mape = function(truth, estimator) {
+  mean(abs((truth - estimator) / truth), na.rm=TRUE)
 }
 
 fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
@@ -56,7 +56,7 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
     y_max = max(c(y_max, poisson_fit[[i]]$R), na.rm=TRUE)
   }
   plot(simulation$R, type="l", xaxt="n", yaxt="n", xlab="", ylab="", lwd=2,
-       ylim=c(0, 10))
+       ylim=c(0, 10), col=1)
   lines(bayesian_fit, col=2, lwd=2)
   lines(ss_fit$data$R, col=3, lwd=2)
   for (i in 1:length(lambda)) {
@@ -64,7 +64,7 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
   }
   legend_position = "topleft"
   if (name %in% c("scenario3", "scenario5")) legend_position = "topright"
-  legend(legend_position, col=1:5, pch=20, xpd=TRUE,
+  legend(legend_position, col=1:(3 + length(lambda)), pch=20, xpd=TRUE,
          legend=c("Teórico", "Bayesiano", "EE", paste("Poisson", 1:length(lambda)))
          )
   # write axis labels closer to plot
@@ -73,17 +73,17 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
   axis(2, mgp=c(3, .5, 0))
   axis(1, mgp=c(3, .5, 0))
   dev.off()
-  # store R SMAPE with respect to theoretical
+  # store R MAPE with respect to theoretical
   relevant = round(simulation$steps * c(0.1, 0.9))
   relevant = relevant[1]:relevant[2]
-  R_smape = list(
-    "bayesian"=smape(bayesian_fit[relevant], simulation$R[relevant]),
-    "ss"=smape(ss_fit$data$R[relevant], simulation$R[relevant])
+  R_mape = list(
+    "bayesian"=mape(simulation$R[relevant], bayesian_fit[relevant]),
+    "ss"=mape(simulation$R[relevant], ss_fit$data$R[relevant])
   )
   for (i in 1:length(lambda)) {
-    R_smape[[paste("Poisson", i)]] = smape(poisson_fit[[i]]$R[relevant], simluation$R[relevant])
+    R_mape[[paste("Poisson", i)]] = mape(simulation$R[relevant], poisson_fit[[i]]$R[relevant])
   }
-  write(toJSON(R_smape), paste(out_dir, "R_smape.json", sep="/"))
+  write(toJSON(R_mape), paste(out_dir, "R_mape.json", sep="/"))
   # store fitted models
   for (i in 1:length(lambda)) {
     write(toJSON(poisson_fit[[i]]), paste(out_dir, paste0("poisson_", i, "_fit.json"), sep="/"))
