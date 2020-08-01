@@ -6,8 +6,8 @@ bayesian = new.env(); source("bayesian/model_fitting.r", local=bayesian)
 ss = new.env(); source("state_space/model_fitting.r", local=ss)
 poisson = new.env(); source("likelihood_incubation_exp/model_fitting.r", local=poisson)
 # R series comparison method
-smape = function(x, y) {
-  mean(abs(x - y) / ((abs(x) + abs(y)) / 2), na.rm=TRUE)
+mape = function(truth, estimator) {
+  mean(abs((truth - estimator) / truth), na.rm=TRUE)
 }
 
 fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
@@ -31,10 +31,11 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
       )) +
     xlab('t') +
     ylab('Incidencias')+
-    theme(legend.title = element_blank(),legend.text=element_text(size=24), 
-          axis.title=element_text(size=20), legend.position="bottom")
+    theme(legend.title = element_blank(),legend.text=element_text(size=20), 
+          axis.title=element_text(size=20), axis.text.x=element_text(size=15),
+          axis.text.y=element_text(size=15), legend.position="bottom")
   # 
-  png(paste(out_dir, "I.png", sep="/"), pointsize=20, width=460, height=420)
+  png(paste(out_dir, "I.png", sep="/"), pointsize=20, width=460, height=390)
   print(p)
   dev.off()
 
@@ -75,23 +76,24 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
   # 
   p =
     ggplot(data) +
-    geom_line(data = data, aes(x = dates, y = real, color = "R real")) +
+    geom_line(data = data, aes(x = dates, y = real, color = "Teórico")) +
     geom_line(data = data, aes(x = dates, y = bayesian, color = "Bayesiano")) +
     geom_line(data = data, aes(x = dates, y = ss, color = "Estado-Espacio")) +
     geom_line(data = data, aes(x = dates, y = poisson, color = "Poisson")) +
     scale_color_manual(values = c(
-      'R real' = 'black',
+      'Teórico' = 'black',
       'Bayesiano' = 'blue',
       'Estado-Espacio' = 'darkgreen',
       'Poisson' = 'deeppink1'
       )) +
     xlab('t') +
-    ylab('R(t)')+ ylim(1,7) +
+    ylab('R(t)') + ylim(1,7) +
     guides(col = guide_legend(ncol = 2)) +
-    theme(legend.title = element_blank(),legend.text=element_text(size=24), 
-          axis.title=element_text(size=20), legend.position="bottom")
+    theme(legend.title = element_blank(),legend.text=element_text(size=20),
+          axis.title=element_text(size=20), axis.text.x=element_text(size=15),
+          axis.text.y=element_text(size=15), legend.position="bottom")
   #
-  png(paste(out_dir, "R.png", sep="/"), pointsize=20, width=500, height=420)
+  png(paste(out_dir, "R.png", sep="/"), pointsize=20, width=460, height=390)
   print(p)
   dev.off()
 
@@ -100,34 +102,38 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
   # 
   p =
     ggplot(data) +
+    geom_line(data = data, aes(x = dates, y = real, color = "Teórico")) +
     geom_line(data = data, aes(x = dates, y = poisson, color = "Poisson")) +
     geom_line(data = data, aes(x = dates, y = poisson_2, color = "Poisson 1")) +
     geom_line(data = data, aes(x = dates, y = poisson_3, color = "Poisson 2")) +
     scale_color_manual(values = c(
+      'Teórico' = 'black',
       'Poisson 1' = 'orange',
       'Poisson 2' = 'darkblue',
       'Poisson' = 'deeppink1'
       )) +
     xlab('t') +
-    ylab('R(t)')+
-    theme(legend.title = element_blank(),legend.text=element_text(size=18), 
-          axis.title=element_text(size=20), legend.position="bottom")
+    ylab('R(t)') +
+    guides(col = guide_legend(ncol = 2)) +
+    theme(legend.title = element_blank(),legend.text=element_text(size=20),
+          axis.title=element_text(size=20), axis.text.x=element_text(size=15),
+          axis.text.y=element_text(size=15), legend.position="bottom")
   #
-  png(paste(out_dir, "R_Poisson.png", sep="/"), pointsize=20, width=500, height=420)
+  png(paste(out_dir, "R_Poisson.png", sep="/"), pointsize=20, width=460, height=390)
   print(p)
   dev.off()
   
   # store R SMAPE with respect to theoretical
   relevant = round(simulation$steps * c(0.1, 0.9))
   relevant = relevant[1]:relevant[2]
-  R_smape = list(
-    "bayesian"=smape(bayesian_fit[relevant], simulation$R[relevant]),
-    "ss"=smape(ss_fit$data$R[relevant], simulation$R[relevant])
+  R_mape = list(
+    "bayesian"=mape(simulation$R[relevant], bayesian_fit[relevant]),
+    "ss"=mape(simulation$R[relevant], ss_fit$data$R[relevant])
   )
   for (i in 1:length(lambda)) {
-    R_smape[[paste("Poisson", i)]] = smape(poisson_fit[[i]]$R[relevant], simulation$R[relevant])
+    R_mape[[paste("Poisson", i)]] = mape(simulation$R[relevant], poisson_fit[[i]]$R[relevant])
   }
-  write(toJSON(R_smape), paste(out_dir, "R_smape.json", sep="/"))
+  write(toJSON(R_mape), paste(out_dir, "R_mape.json", sep="/"))
   # store fitted models
   for (i in 1:length(lambda)) {
     write(toJSON(poisson_fit[[i]]), paste(out_dir, paste0("poisson_", i, "_fit.json"), sep="/"))

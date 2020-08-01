@@ -5,3 +5,6 @@ scenario*/
 legacy/
 all_scenarios.RData
 compare_omega.r
+Archive.zip
+Archive/
+*.RData
