@@ -9,7 +9,7 @@ plot(sim1$I, type="l", ylab="Count", xlab="t", ylim=c(0, max(c(sim1$I, sim1$expe
 lines(sim1$expected_I, col="blue")
 legend("topleft", legend=c("I", "E[I]"), col=c("black", "blue"), pch=20)
 # fit models and store plots
-fit_all(sim1, "scenario1", lambda=c(0, 2^26, 2^27 - 2^26))
+fit_all(sim1, "scenario1", ignore_beta_diff=NULL, lambda=c(0, 2^26, 2^27 - 2^26))
 
 # Scenario 2: Linearly increasing R
 beta = seq(0.1, 0.9, by = 0.015)

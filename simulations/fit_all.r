@@ -31,10 +31,11 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
       )) +
     xlab('t') +
     ylab('Incidencias')+
-    theme(legend.title = element_blank(),legend.text=element_text(size=24), 
-          axis.title=element_text(size=20), legend.position="bottom")
+    theme(legend.title = element_blank(),legend.text=element_text(size=20), 
+          axis.title=element_text(size=20), axis.text.x=element_text(size=15),
+          axis.text.y=element_text(size=15), legend.position="bottom")
   # 
-  png(paste(out_dir, "I.png", sep="/"), pointsize=20, width=460, height=420)
+  png(paste(out_dir, "I.png", sep="/"), pointsize=20, width=460, height=390)
   print(p)
   dev.off()
 
@@ -75,23 +76,24 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
   # 
   p =
     ggplot(data) +
-    geom_line(data = data, aes(x = dates, y = real, color = "R real")) +
+    geom_line(data = data, aes(x = dates, y = real, color = "Teórico")) +
     geom_line(data = data, aes(x = dates, y = bayesian, color = "Bayesiano")) +
     geom_line(data = data, aes(x = dates, y = ss, color = "Estado-Espacio")) +
     geom_line(data = data, aes(x = dates, y = poisson, color = "Poisson")) +
     scale_color_manual(values = c(
-      'R real' = 'black',
+      'Teórico' = 'black',
       'Bayesiano' = 'blue',
       'Estado-Espacio' = 'darkgreen',
       'Poisson' = 'deeppink1'
       )) +
     xlab('t') +
-    ylab('R(t)')+ ylim(1,7) +
+    ylab('R(t)') + ylim(1,7) +
     guides(col = guide_legend(ncol = 2)) +
-    theme(legend.title = element_blank(),legend.text=element_text(size=24), 
-          axis.title=element_text(size=20), legend.position="bottom")
+    theme(legend.title = element_blank(),legend.text=element_text(size=20),
+          axis.title=element_text(size=20), axis.text.x=element_text(size=15),
+          axis.text.y=element_text(size=15), legend.position="bottom")
   #
-  png(paste(out_dir, "R.png", sep="/"), pointsize=20, width=500, height=420)
+  png(paste(out_dir, "R.png", sep="/"), pointsize=20, width=460, height=390)
   print(p)
   dev.off()
 
@@ -100,20 +102,24 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
   # 
   p =
     ggplot(data) +
+    geom_line(data = data, aes(x = dates, y = real, color = "Teórico")) +
     geom_line(data = data, aes(x = dates, y = poisson, color = "Poisson")) +
     geom_line(data = data, aes(x = dates, y = poisson_2, color = "Poisson 1")) +
     geom_line(data = data, aes(x = dates, y = poisson_3, color = "Poisson 2")) +
     scale_color_manual(values = c(
+      'Teórico' = 'black',
       'Poisson 1' = 'orange',
       'Poisson 2' = 'darkblue',
       'Poisson' = 'deeppink1'
       )) +
     xlab('t') +
-    ylab('R(t)')+
-    theme(legend.title = element_blank(),legend.text=element_text(size=18), 
-          axis.title=element_text(size=20), legend.position="bottom")
+    ylab('R(t)') +
+    guides(col = guide_legend(ncol = 2)) +
+    theme(legend.title = element_blank(),legend.text=element_text(size=20),
+          axis.title=element_text(size=20), axis.text.x=element_text(size=15),
+          axis.text.y=element_text(size=15), legend.position="bottom")
   #
-  png(paste(out_dir, "R_Poisson.png", sep="/"), pointsize=20, width=500, height=420)
+  png(paste(out_dir, "R_Poisson.png", sep="/"), pointsize=20, width=460, height=390)
   print(p)
   dev.off()
   
