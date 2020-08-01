@@ -14,7 +14,7 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
   out_dir = paste("simulations", name, sep="/")
   dir.create(out_dir, recursive=TRUE)
 
-  x = seq(1, length.out = 50)
+  x = seq(1, length.out = length(simulation$I))
   data <- data.frame(unlist(x), Percent.Change = unlist(simulation$I))
   cols = c("dates", "I")
   colnames(data) = cols
@@ -63,15 +63,15 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
     )
   }
   # store R graphical comparison
-
-  x = seq(1, length.out = 49)
-  data <- data.frame(unlist(x), Percent.Change = unlist(simulation$I[1:49]))
+  aux_length =  length(simulation$I) - 1
+  x = seq(1, length.out = aux_length)
+  data <- data.frame(unlist(x), Percent.Change = unlist(x))
   cols = c("dates", "I")
   colnames(data) = cols
-  data$real <- simulation$R[1:49]
-  data$bayesian <- bayesian_fit[1:49]
-  data$ss <- ss_fit$data$R[1:49]
-  data$poisson <- poisson_fit[[2]]$R[1:49]
+  data$real <- simulation$R[1:aux_length]
+  data$bayesian <- bayesian_fit[1:aux_length]
+  data$ss <- ss_fit$data$R[1:aux_length]
+  data$poisson <- poisson_fit[[2]]$R[1:aux_length]
   # 
   p =
     ggplot(data) +
@@ -95,8 +95,8 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
   print(p)
   dev.off()
 
-  data$poisson_2 <- poisson_fit[[1]]$R[1:49]
-  data$poisson_3 <- poisson_fit[[3]]$R[1:49]
+  data$poisson_2 <- poisson_fit[[1]]$R[1:aux_length]
+  data$poisson_3 <- poisson_fit[[3]]$R[1:aux_length]
   # 
   p =
     ggplot(data) +
