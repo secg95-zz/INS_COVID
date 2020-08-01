@@ -1,4 +1,5 @@
 library(RJSONIO)
+library(ggplot2)
 
 # import each model
 bayesian = new.env(); source("bayesian/model_fitting.r", local=bayesian)
@@ -12,18 +13,31 @@ smape = function(x, y) {
 fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
   out_dir = paste("simulations", name, sep="/")
   dir.create(out_dir, recursive=TRUE)
+
+  x = seq(1, length.out = 50)
+  data <- data.frame(unlist(x), Percent.Change = unlist(simulation$I))
+  cols = c("dates", "I")
+  colnames(data) = cols
+  data$Expected <- simulation$expected_I
+  data$observed <- simulation$I
+  # 
+  p =
+    ggplot(data) +
+    geom_line(data = data, aes(x = dates, y = observed, color = "I")) +
+    geom_line(data = data, aes(x = dates, y = Expected, color = "E[I]")) +
+    scale_color_manual(values = c(
+      'I' = 'black',
+      'E[I]' = 'blue'
+      )) +
+    xlab('t') +
+    ylab('Incidencias')+
+    theme(legend.title = element_blank(),legend.text=element_text(size=18), 
+          axis.title=element_text(size=20), legend.position="bottom")
+  # 
   png(paste(out_dir, "I.png", sep="/"), pointsize=20, width=460, height=420)
-  par(mar = c(3, 3, 1, 1))
-  plot(simulation$I, type="l", ylim=c(0, max(c(simulation$I, simulation$expected_I))),
-       xaxt="n", yaxt="n", xlab="", ylab="", lwd=2)
-  lines(simulation$expected_I, col="blue", lwd=2)
-  legend("topleft", legend=c("I", "E[I]"), col=c("black", "blue"), pch=20)
-  # write axis labels closer to plot
-  title(xlab="t", ylab="Incidencias", line=1.7)
-  # bring tick labels closer to plot
-  axis(2, mgp=c(3, .5, 0))
-  axis(1, mgp=c(3, .5, 0))
+  print(p)
   dev.off()
+
   # assign priors by adding a small amount of noise to theoretical values
   prior_R = mean(simulation$R) + rnorm(1, sd=0.5)
   prior_rate = 1
@@ -49,30 +63,59 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
     )
   }
   # store R graphical comparison
+
+  x = seq(1, length.out = 49)
+  data <- data.frame(unlist(x), Percent.Change = unlist(simulation$I[1:49]))
+  cols = c("dates", "I")
+  colnames(data) = cols
+  data$real <- simulation$R[1:49]
+  data$bayesian <- bayesian_fit[1:49]
+  data$ss <- ss_fit$data$R[1:49]
+  data$poisson <- poisson_fit[[2]]$R[1:49]
+  # 
+  p =
+    ggplot(data) +
+    geom_line(data = data, aes(x = dates, y = real, color = "R real")) +
+    geom_line(data = data, aes(x = dates, y = bayesian, color = "Bayesiano")) +
+    geom_line(data = data, aes(x = dates, y = ss, color = "Estado-Espacio")) +
+    geom_line(data = data, aes(x = dates, y = poisson, color = "Poisson")) +
+    scale_color_manual(values = c(
+      'R real' = 'black',
+      'Bayesiano' = 'blue',
+      'Estado-Espacio' = 'darkgreen',
+      'Poisson' = 'deeppink1'
+      )) +
+    xlab('t') +
+    ylab('R(t)')+ ylim(1,7) +
+    theme(legend.title = element_blank(),legend.text=element_text(size=18), 
+          axis.title=element_text(size=20), legend.position="bottom")
+  #
   png(paste(out_dir, "R.png", sep="/"), pointsize=20, width=460, height=420)
-  par(mar = c(3, 3, 1, 1))
-  y_max = max(c(bayesian_fit, ss_fit$data$R, simulation$R), na.rm=TRUE)
-  for (i in 1:length(lambda)) {
-    y_max = max(c(y_max, poisson_fit[[i]]$R), na.rm=TRUE)
-  }
-  plot(simulation$R, type="l", xaxt="n", yaxt="n", xlab="", ylab="", lwd=2,
-       ylim=c(0, 10))
-  lines(bayesian_fit, col=2, lwd=2)
-  lines(ss_fit$data$R, col=3, lwd=2)
-  for (i in 1:length(lambda)) {
-    lines(poisson_fit[[i]]$R, col=3+i, lwd=2)
-  }
-  legend_position = "topleft"
-  if (name %in% c("scenario3", "scenario5")) legend_position = "topright"
-  legend(legend_position, col=1:5, pch=20, xpd=TRUE,
-         legend=c("Teórico", "Bayesiano", "EE", paste("Poisson", 1:length(lambda)))
-         )
-  # write axis labels closer to plot
-  title(xlab="t", ylab="R", line=1.7)
-  # bring tick labels closer to plot
-  axis(2, mgp=c(3, .5, 0))
-  axis(1, mgp=c(3, .5, 0))
+  print(p)
   dev.off()
+
+  data$poisson_2 <- poisson_fit[[1]]$R[1:49]
+  data$poisson_3 <- poisson_fit[[3]]$R[1:49]
+  # 
+  p =
+    ggplot(data) +
+    geom_line(data = data, aes(x = dates, y = poisson, color = "Poisson")) +
+    geom_line(data = data, aes(x = dates, y = poisson_2, color = "Poisson 1")) +
+    geom_line(data = data, aes(x = dates, y = poisson_3, color = "Poisson 2")) +
+    scale_color_manual(values = c(
+      'Poisson 1' = 'orange',
+      'Poisson 2' = 'darkblue',
+      'Poisson' = 'deeppink1'
+      )) +
+    xlab('t') +
+    ylab('R(t)')+ #ylim(0,3) +
+    theme(legend.title = element_blank(),legend.text=element_text(size=18), 
+          axis.title=element_text(size=20), legend.position="bottom")
+  #
+  png(paste(out_dir, "R_Poisson.png", sep="/"), pointsize=20, width=460, height=420)
+  print(p)
+  dev.off()
+  
   # store R SMAPE with respect to theoretical
   relevant = round(simulation$steps * c(0.1, 0.9))
   relevant = relevant[1]:relevant[2]
@@ -81,7 +124,7 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
     "ss"=smape(ss_fit$data$R[relevant], simulation$R[relevant])
   )
   for (i in 1:length(lambda)) {
-    R_smape[[paste("Poisson", i)]] = smape(poisson_fit[[i]]$R[relevant], simluation$R[relevant])
+    R_smape[[paste("Poisson", i)]] = smape(poisson_fit[[i]]$R[relevant], simulation$R[relevant])
   }
   write(toJSON(R_smape), paste(out_dir, "R_smape.json", sep="/"))
   # store fitted models
