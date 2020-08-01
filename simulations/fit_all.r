@@ -31,7 +31,7 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
       )) +
     xlab('t') +
     ylab('Incidencias')+
-    theme(legend.title = element_blank(),legend.text=element_text(size=18), 
+    theme(legend.title = element_blank(),legend.text=element_text(size=24), 
           axis.title=element_text(size=20), legend.position="bottom")
   # 
   png(paste(out_dir, "I.png", sep="/"), pointsize=20, width=460, height=420)
@@ -87,10 +87,11 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
       )) +
     xlab('t') +
     ylab('R(t)')+ ylim(1,7) +
-    theme(legend.title = element_blank(),legend.text=element_text(size=18), 
+    guides(col = guide_legend(ncol = 2)) +
+    theme(legend.title = element_blank(),legend.text=element_text(size=24), 
           axis.title=element_text(size=20), legend.position="bottom")
   #
-  png(paste(out_dir, "R.png", sep="/"), pointsize=20, width=460, height=420)
+  png(paste(out_dir, "R.png", sep="/"), pointsize=20, width=500, height=420)
   print(p)
   dev.off()
 
@@ -108,11 +109,11 @@ fit_all = function(simulation, name, ignore_beta_diff=NULL, lambda) {
       'Poisson' = 'deeppink1'
       )) +
     xlab('t') +
-    ylab('R(t)')+ #ylim(0,3) +
+    ylab('R(t)')+
     theme(legend.title = element_blank(),legend.text=element_text(size=18), 
           axis.title=element_text(size=20), legend.position="bottom")
   #
-  png(paste(out_dir, "R_Poisson.png", sep="/"), pointsize=20, width=460, height=420)
+  png(paste(out_dir, "R_Poisson.png", sep="/"), pointsize=20, width=500, height=420)
   print(p)
   dev.off()
   
