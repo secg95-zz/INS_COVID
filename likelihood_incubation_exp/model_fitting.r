@@ -112,7 +112,10 @@ fit = function(observed_I, beta0, beta_min, beta_max, tau10, tau1_min,
     "tau2" = result$solution[steps + 2],
     "N0" = result$solution[steps + 3],
     "A0" = result$solution[steps + 4],
-    "loss" = result$objective
+    "loss" = result$objective,
+    "lambda" = lambda,
+    "ignore_beta_diff" = ignore_beta_diff,
+    "use_history" = use_history
   )
   regularization =  (diff(model$beta) / model$beta[1:(steps - 1)]) ^ 2
   regularization = regularization[!1:(steps - 1) %in% ignore_beta_diff]
@@ -142,6 +145,7 @@ fit_robust = function(observed_I, beta_min, beta_max, tau1_min, tau1_max,
       best_loss = model$loss
     }
   }
+  best_model[["n_iter"]] = n_iter
   return(best_model)
 }
 
