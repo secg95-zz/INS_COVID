@@ -47,7 +47,7 @@ get_expected = function(beta, tau1, tau2, N0, A0, observed_I=NULL) {
 
 fit = function(observed_I, beta0, beta_min, beta_max, tau10, tau1_min,
                tau1_max, tau20, tau2_min, tau2_max, N00, N0_min, N0_max, A00,
-               A0_min, A0_max, lambda, ignore_beta_diff, use_history, n_iter=100000) {
+               A0_min, A0_max, lambda, ignore_beta_diff, use_history, n_nloptr_iter=100000) {
   "
   Fits the model to observed daily new case counts.
   
@@ -78,7 +78,7 @@ fit = function(observed_I, beta0, beta_min, beta_max, tau10, tau1_min,
   lb = c(rep(beta_min, steps), tau1_min, tau2_min, N0_min, A0_min)
   ub = c(rep(beta_max, steps), tau1_max, tau2_max, N0_max, A0_max)
   # set optimization parameters
-  opts = list("algorithm" = "NLOPT_LN_BOBYQA", "xtol_rel" = 1.0e-7, "maxeval" = n_iter)
+  opts = list("algorithm" = "NLOPT_LN_BOBYQA", "xtol_rel" = 1.0e-7, "maxeval" = n_nloptr_iter)
   # define loss function
   loss = function(x) {
     # unpack values
@@ -125,10 +125,10 @@ fit = function(observed_I, beta0, beta_min, beta_max, tau10, tau1_min,
 
 fit_robust = function(observed_I, beta_min, beta_max, tau1_min, tau1_max,
                       tau2_min, tau2_max, N0_min, N0_max, A0_min, A0_max, lambda,
-                      ignore_beta_diff, use_history, n_iter) {
+                      ignore_beta_diff, use_history, n_robust_iter, n_nloptr_iter) {
   best_loss = Inf
   best_model = NULL
-  for (i in 1:n_iter) {
+  for (i in 1:n_robust_iter) {
     beta0 = runif(length(observed_I), beta_min, beta_max)
     tau10 = runif(1, tau1_min, tau1_max)
     tau20 = runif(1, tau2_min, tau2_max)
@@ -139,13 +139,13 @@ fit_robust = function(observed_I, beta_min, beta_max, tau1_min, tau1_max,
                 tau2_min=tau2_min, tau2_max=tau2_max, N00=N00, N0_min=N0_min,
                 N0_max=N0_max, A00=A00, A0_min=A0_min, A0_max=A0_max,
                 lambda=lambda, ignore_beta_diff=ignore_beta_diff,
-                use_history=use_history)
+                use_history=use_history, n_nloptr_iter=n_nloptr_iter)
     if (model$loss < best_loss) {
       best_model = model
       best_loss = model$loss
     }
   }
-  best_model[["n_iter"]] = n_iter
+  best_model[["n_robust_iter"]] = n_robust_iter
   return(best_model)
 }
 
