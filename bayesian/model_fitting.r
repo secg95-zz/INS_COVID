@@ -88,6 +88,8 @@ fit2 = function(I, window=7, prior_shape, prior_rate, omega) {
   "
   steps = length(I)
   mode = rep(NaN, window)
+  lb = rep(NaN, window)
+  ub = rep(NaN, window)
   for (t in window:steps) {
     shape = prior_shape + sum(I[(t - window):t])
     # solve rate iteratively
@@ -98,8 +100,10 @@ fit2 = function(I, window=7, prior_shape, prior_rate, omega) {
       }
     }
     mode = c(mode, (shape - 1)/rate)
+    lb = c(lb, qgamma(0.05, shape=shape, rate=rate))
+    ub = c(ub, qgamma(0.95, shape=shape, rate=rate))
   }
-  R = list("mode"=mode)
+  R = list("mode"=mode, "lb"=lb, "ub"=lb)
   return(R)
 }
 
