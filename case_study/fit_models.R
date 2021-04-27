@@ -21,6 +21,10 @@ I = colombia_data$cases[
   (colombia_data$Fecha.Inicio.Sintomas >= as.Date("2020-03-06"))
   & (colombia_data$Fecha.Inicio.Sintomas <= as.Date("2020-08-15"))
 ]
+date_range = date_range$date_range[
+  (date_range$date_range >= as.Date("2020-03-06"))
+  & (date_range$date_range <= as.Date("2020-08-15"))
+]
 
 # Fit each model
 SI_SHAPE = 2.23
@@ -53,17 +57,17 @@ ss_fit = ss$fit(
 )$data
 # Fit Exponential Poisson model
 poisson = new.env(); source("likelihood_incubation_exp/model_fitting.r", local=poisson)
-N_ROBUST_ITER = 20
-N_NLOPTR_ITER = 20000
-LAMBDA = 2^11
+N_ROBUST_ITER = 10
+N_NLOPTR_ITER = 250000
 # Robust algorithm with 1 iteration, and nloptr with one iteration, takes 0.07s
+LAMBDA = 2^12
 poisson_fit = poisson$fit_robust(
-  I,
-  beta_min=1e-5, beta_max=1,
-  tau1_min = 1 / (4.5 + 4),  tau1_max = 1 / (4.5 - 1), # tau1_min = 1 / (1.915495 + 1),  tau1_max = 1 / (1.915495 - 1),
-  tau2_min = 1/ (8.111421 + 5),  tau2_max = 1/ (8.111421 - 5),
-  N0_min = 1, N0_max = 10,
-  A0_min=0, A0_max=10,
+  observed_I = I,
+  beta_min = 0.7 / 8.111421, beta_max = 3 / 8.111421,
+  tau1_min = 5, tau1_max = 5,# tau1_min = 0.1176652, tau1_max = 0.1176652,# tau1_min = 1 / (4.5 + 2),  tau1_max = 1 / (4.5 - 2), # tau1_min = 1 / (1.915495 + 1),  tau1_max = 1 / (1.915495 - 1),
+  tau2_min = 1/8.111421, tau2_max = 1/8.111421, # tau2_min = 1/ (8.111421 + 8),  tau2_max = 1/ (8.111421 - 2),
+  N0_min = 10, N0_max = 60,# N0_min = 10, N0_max = 10,# N0_min = 1, N0_max = 50,
+  A0_min = 10 / pexp(1, rate=1/8.111421), A0_max = 10 / pexp(1, rate=1/8.111421),# A0_min=1, A0_max=50,
   lambda=LAMBDA,
   ignore_beta_diff=NULL,
   use_history=FALSE,
@@ -74,11 +78,11 @@ poisson_fit = poisson$fit_robust(
 # Format and store results
 fitted_models = list(
   I = I,
-  date_range = as.character(date_range$date_range),
+  date_range = as.character(date_range),
   bayesian = list(
     R_mode = bayesian_fit$mode,
-    R_ub = bayesian_fit$mode * 1.1,
-    R_lb = bayesian_fit$mode * 0.9
+    R_ub = bayesian_fit$ub,
+    R_lb = bayesian_fit$lb
   ),
   state_space = list(
     R_mode = ss_fit$R,
@@ -87,8 +91,8 @@ fitted_models = list(
   ),
   poisson_exp = list(
     R_mode = poisson_fit$R,
-    R_ub = poisson_fit$R * 1.1,
-    R_lb = poisson_fit$R * 0.9
+    R_ub = NULL,
+    R_lb = NULL
   )
 )
 write(toJSON(fitted_models), "./case_study/fitted_models.json")

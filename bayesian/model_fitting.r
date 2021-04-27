@@ -103,7 +103,7 @@ fit2 = function(I, window=7, prior_shape, prior_rate, omega) {
     lb = c(lb, qgamma(0.05, shape=shape, rate=rate))
     ub = c(ub, qgamma(0.95, shape=shape, rate=rate))
   }
-  R = list("mode"=mode, "lb"=lb, "ub"=lb)
+  R = list("mode"=mode, "lb"=lb, "ub"=ub)
   return(R)
 }
 
