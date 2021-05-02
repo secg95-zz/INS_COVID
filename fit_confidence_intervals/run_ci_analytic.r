@@ -151,3 +151,6 @@ df_estimaIC_RtCaso <- data.frame(LI_RtCaso = Limite_inferior_RtCaso,
                                  LS_RtCaso = Limite_superior_RtCaso)
 
 print(df_estimaIC_RtCaso)
+
+saveRDS(df_estimaIC_Rt, "df_estimaIC_Rt_procesoAnalitico_.rds")
+saveRDS(df_estimaIC_RtCaso, "df_estimaIC_RtCaso_procesoAnalitico_.rds")
