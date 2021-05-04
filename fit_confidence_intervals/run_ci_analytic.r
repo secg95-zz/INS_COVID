@@ -3,6 +3,7 @@ library(nloptr)
 library(tictoc)
 library(future.apply)
 library(doParallel)
+library(rjson)
 
 #setwd("scripts/funciones")
 source("f_get_expected.r", encoding = "UTF-8")
@@ -12,12 +13,14 @@ source("f_bootstrap_IC.r", encoding = "UTF-8")
 
 ## Load Data ##
 #currently working on dummy data.
-ajuste_procesoAnalitico = list("beta"=runif(5, 0.2, 1),
-                                "N0"=1,
-                                "tau1"=1 / 1.915495,
+result <- fromJSON(file = "../case_study/fitted_models.json")
+ajuste_procesoAnalitico = list("beta"=result$poisson_exp$R_mode/8.111421,
+                                "N0"=15,
+                                "tau1"=5,
                                 "tau2"=1/ 8.111421)
+
 #incidences
-ColombiaB = list("newCases"=c(1,2,3,4,5))
+ColombiaB = list("newCases"=result$I)
 #### Ajustes Ygorro y tiempos ---- 
 Ygorro <- get_expected(beta = ajuste_procesoAnalitico$beta,
                        N0   = ajuste_procesoAnalitico$N0,
@@ -35,9 +38,9 @@ sct <-  sum( ( prueba$newCases - mean(prueba$newCases) )^2 )
 print("sanity check R^2:", 1 - scm/sct)
 ### Número de iteracacciones ---- 
 
-num_iteracciones <- 2
+num_iteracciones <- 100
 #This has to be adjusted according to JF experiment
-ejecucionCastigo <- 2^9
+ejecucionCastigo <- 2^12
 
 bootstrap_distribucion_NumCasos <- bootstrap_samples( expected_I = Ygorro,
                               observed_I = ColombiaB$newCases[1:tiempos],
@@ -75,7 +78,7 @@ lista_OptimizacionBetas <- foreach( i = X ) %dopar% {
              tau1_max = 1 / (1.915495 - 1),
              tau20 = 1/ 8.111421, tau2_min = 1/ (8.111421 + 1),
              tau2_max = 1/ (8.111421 - 1),
-             N00 = 1, N0_min = 1, N0_max = 1,
+             N00 = 15, N0_min = 10, N0_max = 60,
              Castigo = ejecucionCastigo, ignore_beta_diff = NULL,
              max_eval = 10) #1000 )
 }
