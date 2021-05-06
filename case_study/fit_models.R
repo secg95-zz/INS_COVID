@@ -57,23 +57,33 @@ ss_fit = ss$fit(
 )$data
 # Fit Exponential Poisson model
 poisson = new.env(); source("likelihood_incubation_exp/model_fitting.r", local=poisson)
-N_ROBUST_ITER = 10
-N_NLOPTR_ITER = 250000
+N_ROBUST_ITER = 1
+N_NLOPTR_ITER = 500000
 # Robust algorithm with 1 iteration, and nloptr with one iteration, takes 0.07s
 LAMBDA = 2^12
+tau1 = 1 / (F_INC_SHAPE / F_INC_RATE)
+tau2 = 1/8.111421 # 1 / MEAN_INFECTIOUS_TIME
+A0 = I[1] / pexp(1, rate=tau1)
+N0_max = A0*pexp(1, rate=tau1)/(1 * tau2) # A0 = A0*(1 - pexp(1, rate=tau1)) + N0*beta0
+N0_min = A0*pexp(1, rate=tau1)/(2 * tau2) # R0 in (1, 3)
 poisson_fit = poisson$fit_robust(
   observed_I = I,
-  beta_min = 0.7 / 8.111421, beta_max = 3 / 8.111421,
-  tau1_min = 5, tau1_max = 5,# tau1_min = 0.1176652, tau1_max = 0.1176652,# tau1_min = 1 / (4.5 + 2),  tau1_max = 1 / (4.5 - 2), # tau1_min = 1 / (1.915495 + 1),  tau1_max = 1 / (1.915495 - 1),
-  tau2_min = 1/8.111421, tau2_max = 1/8.111421, # tau2_min = 1/ (8.111421 + 8),  tau2_max = 1/ (8.111421 - 2),
-  N0_min = 10, N0_max = 60,# N0_min = 10, N0_max = 10,# N0_min = 1, N0_max = 50,
-  A0_min = 10 / pexp(1, rate=1/8.111421), A0_max = 10 / pexp(1, rate=1/8.111421),# A0_min=1, A0_max=50,
+  beta_min = 0.6 * tau2, beta_max = 2.75 * tau2,
+  tau1_min = tau1, tau1_max = tau1,# tau1_min = 0.1176652, tau1_max = 0.1176652,# tau1_min = 1 / (4.5 + 2),  tau1_max = 1 / (4.5 - 2), # tau1_min = 1 / (1.915495 + 1),  tau1_max = 1 / (1.915495 - 1),
+  tau2_min = tau2, tau2_max = tau2, # tau2_min = 1/ (8.111421 + 8),  tau2_max = 1/ (8.111421 - 2),
+  N0_min = N0_min, N0_max = N0_max,# N0_min = 10, N0_max = 10,# N0_min = 1, N0_max = 50,
+  A0_min = A0 - 10, A0_max = A0 + 10,# A0_min=1, A0_max=50,
   lambda=LAMBDA,
   ignore_beta_diff=NULL,
   use_history=FALSE,
   n_robust_iter=N_ROBUST_ITER,
   n_nloptr_iter=N_NLOPTR_ITER
 )
+
+# Sanity-check plot
+#plot(bayesian_fit$mode, col="blue", type="l", ylim=c(0, 3))
+#lines(ss_fit$R, col="darkgreen")
+#lines(poisson_fit$R, col="deeppink1")
 
 # Format and store results
 fitted_models = list(
@@ -91,8 +101,14 @@ fitted_models = list(
   ),
   poisson_exp = list(
     R_mode = poisson_fit$R,
+    beta_mode = poisson_fit$beta,
     R_ub = NULL,
-    R_lb = NULL
+    R_lb = NULL,
+    lambda = poisson_fit$lambda,
+    tau1 = poisson_fit$tau1,
+    tau2 = poisson_fit$tau2,
+    N0 = poisson_fit$N0,
+    A0 = poisson_fit$A0
   )
 )
 write(toJSON(fitted_models), "./case_study/fitted_models.json")
