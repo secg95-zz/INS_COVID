@@ -20,7 +20,8 @@ fit_all = function(simulation, out_dir, ignore_beta_diff=NULL, lambda) {
   steps = simulation$steps
   lags = 9
   window = 7
-  n_iter = 20
+  n_nloptr_iter = 10000
+  n_robust_iter = 20
   bayesian_fit = list(
     "prior_rate"=prior_rate, "prior_shape"=prior_shape, "window"=window,
     "omega"=simulation$omega
@@ -49,7 +50,7 @@ fit_all = function(simulation, out_dir, ignore_beta_diff=NULL, lambda) {
       simulation$I, beta_min=0.05, beta_max=2, tau1_min=1/tau1, tau1_max=1/tau1,
       tau2_min=1/tau2, tau2_max=1/tau2, N0_min=1, N0_max=5, A0_min=0, A0_max=5,
       lambda=lambda[i], ignore_beta_diff=ignore_beta_diff, use_history=FALSE,
-      n_iter=n_iter
+      n_nloptr_iter=n_nloptr_iter, n_robust_iter=n_robust_iter
     )
   }
   #store models
