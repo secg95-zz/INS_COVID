@@ -38,7 +38,7 @@ sct <-  sum( ( prueba$newCases - mean(prueba$newCases) )^2 )
 print("sanity check R^2:", 1 - scm/sct)
 ### Número de iteracacciones ---- 
 
-num_iteracciones <- 100
+num_iteracciones <- 150
 #This has to be adjusted according to JF experiment
 ejecucionCastigo <- 2^12
 
@@ -57,9 +57,18 @@ for( j in 1:ncol(bootstrap_distribucion_NumCasos) ){
 }
 
 # #### Do Parallel ------
-beta_ultimo <- ajuste_procesoAnalitico$beta
+beta_ultimo <- rep(ajuste_procesoAnalitico$beta[length( ajuste_procesoAnalitico$beta)], length( ajuste_procesoAnalitico$beta)) 
 X   <- 1:nrow(bootstrap_distribucion_NumCasos)
 tmp <- vector( length = nrow(bootstrap_distribucion_NumCasos) , mode = "list" )
+
+F_INC_SHAPE = 3.16
+F_INC_RATE = 5.16
+F_INF_SCALE = 24.2
+tau1 = 1 / (F_INC_SHAPE / F_INC_RATE)
+tau2 = 1/8.111421 # 1 / MEAN_INFECTIOUS_TIME
+A0 = ColombiaB$newCases[1] / pexp(1, rate=tau1)
+N0_max = A0*pexp(1, rate=tau1)/(1 * tau2) # A0 = A0*(1 - pexp(1, rate=tau1)) + N0*beta0
+N0_min = A0*pexp(1, rate=tau1)/(2 * tau2)
 
 cl   <- parallel::makeCluster( detectCores()-1 )
 doParallel::registerDoParallel(cl)
@@ -74,13 +83,13 @@ lista_OptimizacionBetas <- foreach( i = X ) %dopar% {
   tmp2 <- fit(observed_I = as.numeric(as.matrix(bootstrap_distribucion_NumCasos[i,1:(tiempos)])),
              beta0 = beta_ultimo,
              beta_min = 0.00001, beta_max = Inf,
-             tau10 = 1 / 1.915495, tau1_min = 1 / (1.915495 + 1),
-             tau1_max = 1 / (1.915495 - 1),
-             tau20 = 1/ 8.111421, tau2_min = 1/ (8.111421 + 1),
-             tau2_max = 1/ (8.111421 - 1),
-             N00 = 15, N0_min = 10, N0_max = 60,
+             tau10 = tau1, tau1_min = tau1,
+             tau1_max = tau1,
+             tau20 = tau2, tau2_min = tau2,
+             tau2_max = tau2,
+             N00 = N0_min, N0_min = N0_min, N0_max = N0_max,
              Castigo = ejecucionCastigo, ignore_beta_diff = NULL,
-             max_eval = 10) #1000 )
+             max_eval = 100000)
 }
 toc()
 
