@@ -14,10 +14,10 @@ source("f_bootstrap_IC.r", encoding = "UTF-8")
 ## Load Data ##
 #currently working on dummy data.
 result <- fromJSON(file = "../case_study/fitted_models.json")
-ajuste_procesoAnalitico = list("beta"=result$poisson_exp$R_mode/8.111421,
-                                "N0"=15,
-                                "tau1"=5,
-                                "tau2"=1/ 8.111421)
+ajuste_procesoAnalitico = list("beta"=result$poisson_exp$beta_mode,
+                                "N0"= 81.11421,
+                                "tau1"=1.632911,
+                                "tau2"=0.123283)
 
 #incidences
 ColombiaB = list("newCases"=result$I)
@@ -38,7 +38,7 @@ sct <-  sum( ( prueba$newCases - mean(prueba$newCases) )^2 )
 print("sanity check R^2:", 1 - scm/sct)
 ### Número de iteracacciones ---- 
 
-num_iteracciones <- 150
+num_iteracciones <- 1000
 #This has to be adjusted according to JF experiment
 ejecucionCastigo <- 2^12
 
@@ -57,7 +57,8 @@ for( j in 1:ncol(bootstrap_distribucion_NumCasos) ){
 }
 
 # #### Do Parallel ------
-beta_ultimo <- rep(ajuste_procesoAnalitico$beta[length( ajuste_procesoAnalitico$beta)], length( ajuste_procesoAnalitico$beta)) 
+#beta_ultimo <- rep(ajuste_procesoAnalitico$beta[length( ajuste_procesoAnalitico$beta)], length( ajuste_procesoAnalitico$beta)) 
+beta_ultimo <- ajuste_procesoAnalitico$beta
 X   <- 1:nrow(bootstrap_distribucion_NumCasos)
 tmp <- vector( length = nrow(bootstrap_distribucion_NumCasos) , mode = "list" )
 
@@ -82,14 +83,14 @@ lista_OptimizacionBetas <- foreach( i = X ) %dopar% {
   cat(i, " ")
   tmp2 <- fit(observed_I = as.numeric(as.matrix(bootstrap_distribucion_NumCasos[i,1:(tiempos)])),
              beta0 = beta_ultimo,
-             beta_min = 0.00001, beta_max = Inf,
+             beta_min = 0.6 * tau2, beta_max = 2.75 * tau2,
              tau10 = tau1, tau1_min = tau1,
              tau1_max = tau1,
              tau20 = tau2, tau2_min = tau2,
              tau2_max = tau2,
              N00 = N0_min, N0_min = N0_min, N0_max = N0_max,
              Castigo = ejecucionCastigo, ignore_beta_diff = NULL,
-             max_eval = 100000)
+             max_eval = 1000)
 }
 toc()
 
@@ -130,7 +131,7 @@ colnames(m_Rcaso) <- colnames(bootstrap_distribucion_NumCasos)
 
 
 ######################## Intervalos de confianza ##############
-confianza <- 0.95
+confianza <- 0.5
 alpha <- 1 - confianza
 
 # Beta
