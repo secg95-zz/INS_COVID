@@ -131,7 +131,7 @@ colnames(m_Rcaso) <- colnames(bootstrap_distribucion_NumCasos)
 
 
 ######################## Intervalos de confianza ##############
-confianza <- 0.5
+confianza <- 0.95
 alpha <- 1 - confianza
 
 # Beta
