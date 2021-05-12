@@ -87,10 +87,10 @@ fit2 = function(I, window=7, prior_shape, prior_rate, omega) {
   Unvectorized model fitting.
   "
   steps = length(I)
-  mode = rep(NaN, window)
-  lb = rep(NaN, window)
-  ub = rep(NaN, window)
-  for (t in window:steps) {
+  mode = rep(NaN, window + 1)
+  lb = rep(NaN, window + 1)
+  ub = rep(NaN, window + 1)
+  for (t in (window + 1):steps) {
     shape = prior_shape + sum(I[(t - window):t])
     # solve rate iteratively
     rate = prior_rate

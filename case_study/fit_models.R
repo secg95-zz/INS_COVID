@@ -95,9 +95,9 @@ fitted_models = list(
     R_lb = bayesian_fit$lb
   ),
   state_space = list(
-    R_mode = ss_fit$R,
-    R_ub = ss_fit$Rub,
-    R_lb = ss_fit$Rlb
+    R_mode = c(rep(NaN, length(I) - length(ss_fit$R)), ss_fit$R),
+    R_ub = c(rep(NaN, length(I) - length(ss_fit$Rub)), ss_fit$Rub),
+    R_lb = c(rep(NaN, length(I) - length(ss_fit$Rlb)), ss_fit$Rlb)
   ),
   poisson_exp = list(
     R_mode = poisson_fit$R,
